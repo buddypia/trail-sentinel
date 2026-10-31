@@ -17,7 +17,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import server
-from trail_sentinel.config import CallBudget
+from trail_sentinel.config import CallBudget, reset_custom_hazards
 from trail_sentinel.sam_client import Detection
 
 JPEG_BYTES = b"\xff\xd8\xff\xe0fake-jpeg-payload"
@@ -160,6 +160,26 @@ class FilterConceptsTests(unittest.TestCase):
     def test_empty_means_all(self):
         self.assertEqual(len(server.filter_concepts([])), 6)
         self.assertEqual(len(server.filter_concepts(None)), 6)
+
+
+class CustomConceptTests(unittest.TestCase):
+    def tearDown(self):
+        reset_custom_hazards()
+
+    def test_add_concept_registers_zero_retraining_hazard(self):
+        payload, code = server.add_concept({"name_ko": "쓰러진 나무"})
+        self.assertEqual(code, 200)
+        self.assertEqual(payload["added"]["label_ko"], "쓰러진 나무")
+        self.assertEqual(
+            payload["added"]["prompt"], "a fallen tree or log blocking the trail"
+        )
+        self.assertEqual(len(payload["hazards"]), 7)
+        self.assertIn(payload["added"]["key"], server.filter_concepts(None))
+
+    def test_add_concept_rejects_empty_name(self):
+        payload, code = server.add_concept({"name_ko": "   "})
+        self.assertEqual(code, 400)
+        self.assertEqual(payload["error"], "bad_concept")
 
 
 if __name__ == "__main__":

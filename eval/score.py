@@ -49,13 +49,19 @@ def main() -> None:
             lead_times.append((reach - in_range[0]) / args.fps)
 
     n = len(hazard_clips)
-    minutes = len(manifest) * args.clip_frames / args.fps / 60.0
-    print(f"clips: {len(manifest)} (hazard: {n})")
+    no_hazard_clips = [m for m in manifest if not m["hazard"]]
+    no_hazard_minutes = max(len(no_hazard_clips), 1) * args.clip_frames / args.fps / 60.0
+    total_minutes = max(len(manifest), 1) * args.clip_frames / args.fps / 60.0
+    print(f"clips: {len(manifest)} (hazard: {n}, no-hazard: {len(no_hazard_clips)})")
     print(f"detection rate:    {detected}/{n} = {detected / n:.0%}" if n else "detection rate: n/a")
     if lead_times:
         print(f"warning lead time: avg {sum(lead_times) / len(lead_times):.1f}s "
               f"({', '.join(f'{t:.1f}s' for t in lead_times)})")
-    print(f"false alarms:      {false_alarms} total, {false_alarms / minutes:.2f}/min of footage")
+    print(
+        f"false alarms:      {false_alarms} total, "
+        f"{false_alarms / no_hazard_minutes:.2f}/min of no-hazard footage "
+        f"({false_alarms / total_minutes:.2f}/min of all footage)"
+    )
 
 
 if __name__ == "__main__":

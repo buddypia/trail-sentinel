@@ -422,9 +422,8 @@ class MetaSAMTransport:
     """``SAMTransport`` implementation backed by the connector helper.
 
     Live path only: each prompt in the request costs one provider image
-    call through the helper subprocess. ``timeout`` bounds one helper call
-    (the provider request inside it gets the same budget; the subprocess is
-    hard-killed shortly after). Used by ``server.py``'s opt-in live mode.
+    call through the helper subprocess. ``timeout`` bounds one helper call.
+    Used by ``server.py``'s opt-in live mode.
     """
 
     def __init__(

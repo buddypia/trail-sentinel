@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import threading
 from dataclasses import dataclass, field
 from datetime import date
@@ -13,7 +14,7 @@ from pathlib import Path
 # calls themselves live in the connector helper, not in this package.
 META_MODEL_API_HOST = "api.meta.ai"
 
-# --- Hazard concepts v1 (frozen by spec, 2026-10-28). Max 6. ---
+# --- Hazard concepts v1 (frozen by spec, 2026-10-28). Max 6 baseline + F7 live custom concepts. ---
 # zone: "feet" (발밑/발 앞) or "front" (전방). severity: 1 (caution) .. 3 (stop).
 @dataclass(frozen=True)
 class Hazard:
@@ -23,15 +24,76 @@ class Hazard:
     zone: str
     severity: int
 
-HAZARDS: list[Hazard] = [
+DEFAULT_HAZARDS: tuple[Hazard, ...] = (
     Hazard("snake", "뱀", "a snake camouflaged among fallen leaves and soil", "feet", 3),
     Hazard("wasp_nest", "말벌집", "a wasp nest attached to a tree, rock or structure", "front", 3),
     Hazard("bear", "곰", "a bear on or near the trail", "front", 3),
     Hazard("boar", "멧돼지", "a wild boar on or near the trail", "front", 2),
     Hazard("rockfall", "낙석 구간", "a pile of fallen rocks or a collapsed trail section", "front", 2),
     Hazard("slippery", "미끄러운 구간", "a hidden hole, protruding root or wet slippery fallen leaves underfoot", "feet", 1),
-]
-HAZARD_BY_KEY = {h.key: h for h in HAZARDS}
+)
+
+HAZARDS: list[Hazard] = list(DEFAULT_HAZARDS)
+HAZARD_BY_KEY: dict[str, Hazard] = {h.key: h for h in HAZARDS}
+_hazard_lock = threading.Lock()
+
+_KO_PROMPT_PRESETS: dict[str, str] = {
+    "쓰러진 나무": "a fallen tree or log blocking the trail",
+    "전동 킥보드": "an electric scooter on the trail",
+    "자전거": "a bicycle or mountain bike approaching on the trail",
+    "절벽": "a steep cliff edge or drop-off beside the trail",
+    "웅덩이": "a deep water puddle or mud hole on the trail",
+    "얼음": "black ice or frozen slippery patch on the trail",
+    "개": "an unleashed dog on the trail",
+    "사슴": "a deer or elk on the trail",
+}
+
+
+def register_custom_hazard(
+    name_ko: str,
+    prompt: str | None = None,
+    *,
+    key: str | None = None,
+    zone: str = "front",
+    severity: int = 2,
+) -> Hazard:
+    """Register a zero-retraining custom hazard concept at runtime (PRD F7)."""
+    clean_name = (name_ko or "").strip()
+    if not clean_name:
+        raise ValueError("name_ko is required")
+    clean_prompt = (prompt or "").strip()
+    if not clean_prompt:
+        clean_prompt = _KO_PROMPT_PRESETS.get(clean_name, clean_name)
+    if zone not in ("feet", "front"):
+        zone = "front"
+    sev = max(1, min(3, int(severity)))
+    with _hazard_lock:
+        for existing in HAZARDS:
+            if existing.name_ko == clean_name or (key and existing.key == key):
+                return existing
+        slug = re.sub(r"[^a-z0-9_]+", "_", (key or clean_prompt).lower()).strip("_")
+        if not slug or slug in HAZARD_BY_KEY:
+            slug = f"custom_{len(HAZARDS) + 1}"
+        hazard = Hazard(
+            key=slug,
+            name_ko=clean_name,
+            prompt=clean_prompt,
+            zone=zone,
+            severity=sev,
+        )
+        HAZARDS.append(hazard)
+        HAZARD_BY_KEY[hazard.key] = hazard
+        return hazard
+
+
+def reset_custom_hazards() -> None:
+    """Restore HAZARDS and HAZARD_BY_KEY to the frozen 6 v1 concepts."""
+    with _hazard_lock:
+        HAZARDS.clear()
+        HAZARDS.extend(DEFAULT_HAZARDS)
+        HAZARD_BY_KEY.clear()
+        for h in DEFAULT_HAZARDS:
+            HAZARD_BY_KEY[h.key] = h
 
 
 # --- Spending guard: no hard cap exists on Meta billing, so the client

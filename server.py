@@ -30,7 +30,13 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-from trail_sentinel.config import HAZARD_BY_KEY, HAZARDS, BudgetExceeded, CallBudget
+from trail_sentinel.config import (
+    HAZARD_BY_KEY,
+    HAZARDS,
+    BudgetExceeded,
+    CallBudget,
+    register_custom_hazard,
+)
 from trail_sentinel.meta_transport import (
     MetaSAMTransport,
     ground_plane_distance_estimator,
@@ -54,7 +60,7 @@ FPS = 10.0
 # minimum interval caps the live scan rate regardless of client behaviour;
 # the per-call timeout follows PRD 9.4 (10s, the tick then fails honestly).
 LIVE_ENABLED = os.environ.get("TRAIL_SENTINEL_LIVE") == "1"
-LIVE_MIN_INTERVAL_S = 2.5
+LIVE_MIN_INTERVAL_S = float(os.environ.get("LIVE_MIN_INTERVAL_S", "0.45"))
 LIVE_CALL_TIMEOUT_S = 10.0
 # Same span as the stub cooldown (COOLDOWN_FRAMES at FPS), in wall-clock
 # seconds: repeat voice alerts for one track stay at least this far apart.
@@ -64,7 +70,11 @@ MAX_BODY_BYTES = 16 * 1024 * 1024
 _IMAGE_MEDIA_TYPES = ("image/jpeg", "image/png", "image/webp")
 
 _sam = StubSAMClient(ROOT / "fixtures")
-_budget = CallBudget(counter_path=ROOT / ".call_counter.json")
+_budget = CallBudget(
+    counter_path=Path(
+        os.environ.get("CALL_COUNTER_FILE", str(ROOT / ".call_counter.json"))
+    )
+)
 _lock = threading.Lock()
 _prev_by_track: dict[str, Detection] = {}
 _last_alert_frame: dict[str, int] = {}
@@ -83,6 +93,7 @@ def _detection_payload(d: Detection) -> dict:
         "concept": d.concept,
         "label_ko": _label(d.concept),
         "distance_m": d.distance_m,
+        "clock_direction": d.clock_direction,
         "bbox_norm": d.bbox,
         "severity": _severity(d.concept),
         "confidence": d.confidence,
@@ -305,12 +316,45 @@ _live_scanner = _make_live_scanner() if LIVE_ENABLED else None
 def status() -> dict:
     return {
         "mode": "live" if LIVE_ENABLED else "stub",
+        "engine": "sam-3.1" if LIVE_ENABLED else "stub",
         "live_enabled": LIVE_ENABLED,
         "calls_today": _budget.used_today(),
         "daily_cap": _budget.daily_cap,
-        "hazards": [{"key": h.key, "label_ko": h.name_ko,
-                     "zone": h.zone, "severity": h.severity} for h in HAZARDS],
+        "hazards": [
+            {
+                "key": h.key,
+                "label_ko": h.name_ko,
+                "prompt": h.prompt,
+                "zone": h.zone,
+                "severity": h.severity,
+            }
+            for h in HAZARDS
+        ],
     }
+
+
+def add_concept(body: dict) -> tuple[dict, int]:
+    """Register a custom hazard concept at runtime without retraining (PRD F7)."""
+    try:
+        hazard = register_custom_hazard(
+            name_ko=str(body.get("name_ko") or body.get("label_ko") or ""),
+            prompt=body.get("prompt"),
+            key=body.get("key"),
+            zone=str(body.get("zone") or "front"),
+            severity=int(body.get("severity") or 2),
+        )
+    except (ValueError, TypeError) as exc:
+        return {"error": "bad_concept", "detail": str(exc)}, 400
+    return {
+        "added": {
+            "key": hazard.key,
+            "label_ko": hazard.name_ko,
+            "prompt": hazard.prompt,
+            "zone": hazard.zone,
+            "severity": hazard.severity,
+        },
+        "hazards": status()["hazards"],
+    }, 200
 
 
 class Handler(SimpleHTTPRequestHandler):
@@ -346,7 +390,7 @@ class Handler(SimpleHTTPRequestHandler):
             super().do_GET()
 
     def do_POST(self):
-        if self.path != "/api/scan":
+        if self.path not in ("/api/scan", "/api/concepts"):
             self._json({"error": "not_found"}, 404)
             return
         try:
@@ -357,6 +401,10 @@ class Handler(SimpleHTTPRequestHandler):
             body = json.loads(self.rfile.read(length) or b"{}")
         except (ValueError, json.JSONDecodeError):
             self._json({"error": "bad_json"}, 400)
+            return
+        if self.path == "/api/concepts":
+            payload, code = add_concept(body)
+            self._json(payload, code)
             return
         if "image" in body:
             self._scan_live(body)
