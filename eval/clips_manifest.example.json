@@ -1,0 +1,1 @@
+[{"clip":"hero_snake_leaves","ground_truth_frame_range":[10,55],"hazard":"snake","notes":"Mamushi camouflaged in fallen leaves; hiker reaches it at frame 58.","reach_frame":58},{"clip":"empty_trail_morning","ground_truth_frame_range":null,"hazard":null,"notes":"No hazard present; any alert on this clip counts as a false alarm.","reach_frame":null}]

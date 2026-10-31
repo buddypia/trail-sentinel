@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Trail Sentinel — 등산로 위험 센티넬</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>🥾 Trail Sentinel</h1>
+  <p id="status" class="status">연결 중…</p>
+</header>
+
+<main id="stage">
+  <video id="cam" autoplay playsinline muted></video>
+  <div id="demoBadge" class="demo-badge" hidden>데모 장면 재생 중 (카메라 아님)</div>
+  <div id="unknownBadge" class="unknown-badge" hidden>확인 불가 — 스캔 실패</div>
+  <canvas id="overlay"></canvas>
+  <div id="alertBanner" class="alert-banner" hidden></div>
+  <p id="message" class="message">아래에서 카메라 스캔 또는 데모 모드를 시작하세요.</p>
+</main>
+
+<p class="safety-notice">보조 도구입니다 — 안전을 보장하지 않습니다. 오탐·미탐이 있을 수 있으니, 경고가 없어도 주변을 직접 확인하세요.</p>
+
+<section class="controls">
+  <button id="btnLive" class="primary">📷 카메라 스캔 시작</button>
+  <button id="btnDemo">▶️ 데모 모드</button>
+  <button id="btnStop" disabled>⏹ 중지</button>
+</section>
+
+<section>
+  <h2>감지 개념 (v1)</h2>
+  <div id="chips" class="chips"></div>
+</section>
+
+<script src="app.js"></script>
+</body>
+</html>

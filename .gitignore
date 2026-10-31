@@ -1,0 +1,21 @@
+# Secrets / local state — never commit
+.env
+.call_counter.json
+
+# Python
+__pycache__/
+*.pyc
+
+# Vendored packages (installed locally, e.g. meta-sam-parser)
+tools/pylibs/
+
+# Deployment runtime state (ephemeral tunnel URL, pids, logs)
+deploy/current_url.txt
+deploy/*.pid
+deploy/logs/
+
+# Large eval media — videos stay out of git; licences + manifest are kept
+# (see eval/data/SOURCES.md and eval/clips_manifest.json)
+eval/data/*.mp4
+eval/data/*.webm
+eval/data/*.mov
