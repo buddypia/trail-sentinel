@@ -18,7 +18,13 @@
   <div id="unknownBadge" class="unknown-badge" hidden>확인 불가 — 스캔 실패</div>
   <canvas id="overlay"></canvas>
   <div id="alertBanner" class="alert-banner" hidden></div>
-  <p id="message" class="message">아래에서 카메라 스캔 또는 데모 모드를 시작하세요.</p>
+  <div id="message" class="message">
+    <p id="messageText">아래에서 카메라 스캔 또는 데모 모드를 시작하세요.</p>
+    <div class="stage-qr">
+      <img src="qr.png" alt="모바일 접속 QR 코드" width="160" height="160">
+      <span>📱 핸드폰 카메라로 스캔해 바로 열기</span>
+    </div>
+  </div>
 </main>
 
 <p class="safety-notice">보조 도구입니다 — 안전을 보장하지 않습니다. 오탐·미탐이 있을 수 있으니, 경고가 없어도 주변을 직접 확인하세요.</p>
@@ -32,6 +38,16 @@
 <section>
   <h2>감지 개념 (v1)</h2>
   <div id="chips" class="chips"></div>
+</section>
+
+<section class="qr-card" id="qrSection">
+  <img src="qr.png" alt="Trail Sentinel 모바일 접속 QR 코드" class="qr-img" width="140" height="140">
+  <div class="qr-info">
+    <h2>📱 핸드폰으로 바로 접속 (QR 스캔)</h2>
+    <p>휴대폰 기본 카메라로 QR 코드를 비추면 모바일 웹앱이 바로 열립니다.</p>
+    <a id="qrUrl" href="http://localhost:8765" class="qr-link">http://localhost:8765</a>
+    <button id="btnCopyUrl" type="button" class="copy-btn">🔗 URL 복사</button>
+  </div>
 </section>
 
 <script src="app.js"></script>

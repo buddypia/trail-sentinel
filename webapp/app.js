@@ -9,7 +9,7 @@
 //    appears on the first failure and stays until a scan succeeds.
 const $ = (id) => document.getElementById(id);
 const video = $("cam"), canvas = $("overlay"), ctx = canvas.getContext("2d");
-const banner = $("alertBanner"), msg = $("message"), statusEl = $("status");
+const banner = $("alertBanner"), msg = $("message"), msgText = $("messageText") || msg, statusEl = $("status");
 const unknownBadge = $("unknownBadge");
 const shot = document.createElement("canvas"), shotCtx = shot.getContext("2d");
 
@@ -211,7 +211,7 @@ function stopAll(note) {
   banner.hidden = true;
   registerSuccess();
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  if (note) { msg.hidden = false; msg.textContent = note; }
+  if (note) { msg.hidden = false; msgText.textContent = note; }
 }
 
 $("btnDemo").onclick = () => {
@@ -235,10 +235,21 @@ $("btnLive").onclick = async () => {
     startLoop("live");
   } catch {
     msg.hidden = false;
-    msg.textContent = "카메라 권한이 거부됐거나 카메라를 쓸 수 없습니다. " +
+    msgText.textContent = "카메라 권한이 거부됐거나 카메라를 쓸 수 없습니다. " +
       "브라우저 설정에서 카메라를 허용하거나, 데모 모드로 확인해 보세요. " +
       "(카메라는 HTTPS 또는 localhost에서만 동작합니다)";
   }
 };
+
+if ($("btnCopyUrl")) {
+  $("btnCopyUrl").onclick = async () => {
+    const url = ($("qrUrl") && $("qrUrl").href) || window.location.href;
+    try {
+      await navigator.clipboard.writeText(url);
+      $("btnCopyUrl").textContent = "✅ 복사 완료!";
+      setTimeout(() => { $("btnCopyUrl").textContent = "🔗 URL 복사"; }, 2000);
+    } catch {}
+  };
+}
 
 loadStatus();

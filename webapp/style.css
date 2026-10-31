@@ -19,8 +19,15 @@ header h1 { font-size: 1.3rem; }
                 padding: 16px 10px; animation: blink .5s steps(2) 6; }
 .alert-banner.caution { background: #b97a0c; }
 @keyframes blink { 50% { opacity: .55; } }
-.message { position: absolute; left: 0; right: 0; top: 45%; text-align: center;
-           padding: 0 18px; color: #cfd8cf; }
+.message { position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%);
+           text-align: center; padding: 0 18px; color: #cfd8cf;
+           display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.message[hidden] { display: none; }
+.stage-qr { display: inline-flex; flex-direction: column; align-items: center; gap: 8px;
+            background: rgba(16, 20, 16, 0.85); border: 1px solid #3a4d3a;
+            padding: 12px 14px; border-radius: 12px; }
+.stage-qr img { background: #fff; padding: 6px; border-radius: 8px; display: block; }
+.stage-qr span { font-size: .82rem; color: #b8d4b8; font-weight: 600; }
 
 .safety-notice { margin: 12px 0 0; padding: 10px 12px; border: 1px solid #b97a0c;
                 border-radius: 10px; background: #2a2410; color: #f5e6b8; font-size: .9rem; line-height: 1.5; }
@@ -38,3 +45,14 @@ h2 { font-size: 1rem; margin-bottom: 8px; }
 .chip.off { opacity: .35; border-style: dashed; }
 .chip.sev3 { border-color: #c01616; }
 .chip.sev2 { border-color: #b97a0c; }
+
+.qr-card { margin: 18px 0 8px; padding: 14px; border: 1px solid #3a4d3a;
+           border-radius: 12px; background: #182018; display: flex;
+           align-items: center; gap: 14px; }
+.qr-img { background: #fff; padding: 8px; border-radius: 10px; flex-shrink: 0; }
+.qr-info { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.qr-info h2 { margin: 0; font-size: 1rem; color: #eef2ee; }
+.qr-info p { font-size: .82rem; color: #9db89d; line-height: 1.4; }
+.qr-link { font-size: .78rem; color: #7cd47c; word-break: break-all; text-decoration: underline; }
+.copy-btn { align-self: flex-start; flex: 0 0 auto; min-width: 0; padding: 7px 12px;
+            font-size: .82rem; border-radius: 8px; background: #2e7d32; font-weight: 600; cursor: pointer; }
