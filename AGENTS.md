@@ -4,7 +4,7 @@
 
 **한 줄 요약**: 폰 카메라로 등산로를 스캔해 SAM 3.1(텍스트 프롬프트 개념 분할)이 위험을 찾고, 우선순위 판정이 위험할 때만 음성+진동으로 경고하는 개인용 야외 위험 센티넬. Meta Global AI Developer Hackathon, Indie 트랙, Push the Frontier. 제출 마감 **2026-11-05 11:00 JST (Nov 4 21:00 ET)**.
 
-**현재 단계**: 스텁 파이프라인 + 모바일 웹앱 동작. Meta Model API는 2026-10-31 live 검증 완료 — `GET /v1/models`에서 `sam-3.1` 확인, 히어로 카퍼헤드 스틸에 prompt `snake`로 분할 호출 성공 (box+mask 1건, 3.0초, $0.0025, Jun의 $150 credit 내). `trail_sentinel/meta_transport.py`가 connector helper subprocess 경유 live transport와 실응답 기반 매핑·거리 추정(추정치)을 제공하고, `RealSAMClient`는 기본 비활성·`CallBudget` 필수인 채로 그대로다. **F1 연결 완료 (2026-10-31)**: 웹앱이 실제 카메라 프레임을 전송하고, 서버는 `TRAIL_SENTINEL_LIVE=1`일 때만 live 모드로 실 SAM을 호출한다 (기본값 스텁). 서버 경유 실호출로 히어로 스틸에서 뱀 감지+경고+마스크까지 확인 (스캔 지연 6.1초 실측 — PRD 목표 미달). 서버는 아직 이 VM에서만 실행되며 폰 배포는 미완. 요구의 기준은 `PRD.md` (v0.4).
+**현재 단계**: 스텁 파이프라인 + 모바일 웹앱 동작. Meta Model API는 2026-10-31 live 검증 완료 — `GET /v1/models`에서 `sam-3.1` 확인, 히어로 카퍼헤드 스틸에 prompt `snake`로 분할 호출 성공 (box+mask 1건, 3.0초, $0.0025, Jun의 $150 credit 내). `trail_sentinel/meta_transport.py`가 connector helper subprocess 경유 live transport와 실응답 기반 매핑·거리 추정(추정치)을 제공하고, `RealSAMClient`는 기본 비활성·`CallBudget` 필수인 채로 그대로다. **F1 연결 완료 (2026-10-31)**: 웹앱이 실제 카메라 프레임을 전송하고, 서버는 `TRAIL_SENTINEL_LIVE=1`일 때만 live 모드로 실 SAM을 호출한다 (기본값 스텁). 서버 경유 실호출로 히어로 스틸에서 뱀 감지+경고+마스크까지 확인 (스캔 지연 6.1초 실측 — PRD 목표 미달). **배포 시도 (2026-10-31)**: 서버는 이 VM에서 스텁 모드로 실행 중이나, 이 VM의 egress가 터널 생성을 차단해(Cloudflare quick tunnel TLS 오류, SSH 터널 차단, localtunnel 무응답) 공개 HTTPS URL은 아직 확보 못 함 — 상세와 우회법은 `DEPLOY.md`, 재시작 스크립트는 `deploy/start_demo.sh`. **공개 레포 준비 완료 (2026-10-31)**: git 초기 커밋 `69a3574` (시크릿 스캔 통과, 파일 크기 게이트 통과, 테스트 32/32), 번들과 푸시 안내를 `~/workspace/your_files/trail-sentinel-repo/`에 보냄. 남은 수동 단계는 Jun이 빈 공개 레포를 만들고 번들을 푸시하는 것뿐. 요구의 기준은 `PRD.md` (v0.4).
 
 ## 먼저 읽을 문서 지도
 
@@ -27,6 +27,7 @@
 | 파일 | 역할 |
 | --- | --- |
 | `PRD.md` / `TECH.md` | 요구사항 / 기술 선정 (현행 기준 문서) |
+| `DEPLOY.md`, `deploy/start_demo.sh`, `deploy/stop_demo.sh` | 데모 실행·공개 터널 절차와 현재 배포 상태 (이 VM egress 차단 기록 포함) |
 | `server.py` | 웹 백엔드 — `GET /`, `GET /api/status`, `POST /api/scan`. 데모 프레임 어댑터 + 라이브 `LiveScanner`(개념별 병렬 호출·최소 간격 2.5초·예산 사전 점검)와 쿨다운 상태 보유. 라이브는 `TRAIL_SENTINEL_LIVE=1` opt-in |
 | `webapp/index.html`, `app.js`, `style.css` | 모바일 웹 프론트엔드 (카메라·오버레이·배너·TTS·진동·데모 모드) |
 | `trail_sentinel/config.py` | 위험 개념 v1 6개(`HAZARDS`), 등록 host 상수, `CallBudget` 지출 가드. credential을 읽지 않는다 |
@@ -48,7 +49,7 @@
 | --- | --- | --- |
 | 판정 로직 (F4), 경고 출력 (F5), 데모 모드 (F6), 지출 가드 (F8) | 구현됨 | 웹·CLI 양쪽에서 동작. 경고는 최고 위험 1건, 쿨다운·문장 중복 억제 적용 |
 | SAM 분할 (F2) | 구현됨 (이미지) | live 검증 완료 (2026-10-31): models 목록에서 `sam-3.1` 확인, 히어로 스틸 분할에서 box+mask 1건 반환. `meta_transport`가 helper subprocess 경유 live transport + 실응답 파서 기반 매핑 + 마스크 디코딩을 제공하고, 서버 live 경로에 연결됨. SAM 출력에 confidence·distance가 없어 confidence는 `None`, 거리는 추정치. 비디오 경로는 미실측 |
-| 라이브 스캔 (F1) | 구현됨 (서버 로컬) | 웹앱이 실제 프레임을 캡처·전송하고 서버 live 모드(`TRAIL_SENTINEL_LIVE=1`)가 개념별 병렬 실호출 후 판정·경고 반환. 서버 경유 실호출 검증 완료 (뱀 감지, 스캔 지연 6.1초 실측). 최소 간격 2.5초·호출당 10초 타임아웃·예산 사전 점검·"확인 불가" 표시 포함. 단 서버는 이 VM에서만 실행 — 폰 배포(HTTPS)는 미완이라 폰 실기 검증은 안 됨 |
+| 라이브 스캔 (F1) | 구현됨 (서버 로컬) | 웹앱이 실제 프레임을 캡처·전송하고 서버 live 모드(`TRAIL_SENTINEL_LIVE=1`)가 개념별 병렬 실호출 후 판정·경고 반환. 서버 경유 실호출 검증 완료 (뱀 감지, 스캔 지연 6.1초 실측). 최소 간격 2.5초·호출당 10초 타임아웃·예산 사전 점검·"확인 불가" 표시 포함. 단 서버는 이 VM에서만 실행 — 2026-10-31 공개 터널 3종(Cloudflare quick tunnel·localhost.run·localtunnel) 모두 이 VM의 egress 차단으로 실패해 공개 URL 미확보 (`DEPLOY.md`). 폰 실기 검증은 안 됨 |
 | 추적·거리 (F3) | 부분 | fixture 거리 보간(스텁). 라이브 접근 속도는 연속 스캔의 벽시계 실측 간격으로 환산 (2026-10-31 해소). 거리는 여전히 ground-plane 추정치로 미캘리브레이션 |
 | 화면 표시 | 구현됨 | live 감지는 마스크 PNG 오버레이 + bbox를 함께 그림 (마스크 디코딩 실패·스텁은 bbox만) |
 | 개념 추가 (F7), 기억 (F10), 리포트 (F11) | 계획 | 동적 추가 API/UI 없음. 개념은 `config.HAZARDS` 고정 6개 |
@@ -103,7 +104,7 @@ python3 -m unittest discover -s tests -v
 2. **eval 실측** — `eval/data/SOURCES.md` 작성 → 라벨 manifest 작성 → 기준선 1차 측정. `score.py` 오경보율 분모 정의를 하나로 통일한다.
 3. **지연 계측** — 클라이언트·서버 타임스탬프를 남겨 PRD 9.2절 SLO를 실측 가능하게 만든다. 경고 유효 기간(3.0초) 검사와 동시 요청 1건 제한도 이때 넣는다.
 4. **F7 구현** — 개념 동적 추가 API + 입력 UI (데모의 라이브 확장 장면이 걸려 있다).
-5. **배포** — 폰 프리뷰·데모 촬영용 HTTPS 경로 확정 (후보와 조건은 TECH.md 리스크 절). repo public 전환 전 시크릿 점검.
+5. **배포·공개 레포** — repo 쪽은 준비 완료 (2026-10-31): 시크릿 스캔 통과, 초기 커밋 `69a3574`, 번들+푸시 안내를 `~/workspace/your_files/trail-sentinel-repo/`에 보냄. 남은 것은 Jun의 수동 단계 (빈 공개 레포 생성 → 번들 클론 → 푸시)와, 폰 프리뷰·데모 촬영용 HTTPS 경로 확정 — 이 VM에서는 egress 차단으로 불가하니 일반 네트워크에서 `deploy/start_demo.sh` 실행이 필요 (`DEPLOY.md`).
 
 ## 작업 관례
 
