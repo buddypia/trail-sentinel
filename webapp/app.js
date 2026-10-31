@@ -1,5 +1,5 @@
 "use strict";
-// Trail Sentinel — Meta SAM 3.1 + Muse Wonder Real-Time Tactical HUD
+// Trail Sentinel · Meta SAM 3.1 + Muse Wonder Real-Time Optical HUD
 // - Live Camera Mode (F1/F2): captures 640px frames -> POST /api/scan -> mask/bbox + triage alert
 // - Demo Mode (F6): replays recorded hero fixture frames 0..60 without camera
 // - Live Custom Hazard (F7): adds zero-retraining concepts via voice/text -> POST /api/concepts
@@ -18,12 +18,18 @@ const statusEl = $("status");
 const latencyPill = $("latencyPill");
 const scanDot = $("scanDot");
 const unknownBadge = $("unknownBadge");
+const kpiDistance = $("kpiDistance");
+const kpiDirection = $("kpiDirection");
+const kpiLatency = $("kpiLatency");
+const kpiBudget = $("kpiBudget");
 const btnLive = $("btnLive");
 const btnDemo = $("btnDemo");
 const btnStartHero = $("btnStartHero");
 const btnDemoHero = $("btnDemoHero");
 const btnAudio = $("btnAudio");
+const audioLabel = $("audioLabel");
 const btnQrModal = $("btnQrModal");
+const btnExpandQr = $("btnExpandQr");
 const btnCloseQr = $("btnCloseQr");
 const qrPanel = $("qrPanel");
 const btnAddConcept = $("btnAddConcept");
@@ -64,18 +70,71 @@ let lastStatus = null;
 function renderStatus(extra) {
   if (!lastStatus) return;
   const isLive = lastStatus.mode === "live";
-  const engineLabel = isLive ? "라이브 (Meta SAM 3.1)" : "스텁 (데모 데이터)";
+  const engineLabel = isLive ? "라이브 (Meta SAM 3.1)" : "스텁 (데모 픽스처)";
   statusEl.textContent =
     `${engineLabel} · 호출 ${lastStatus.calls_today}/${lastStatus.daily_cap}` +
     (extra ? ` · ${extra}` : "");
+  if (kpiBudget) {
+    kpiBudget.textContent = `${lastStatus.calls_today} / ${lastStatus.daily_cap}`;
+  }
+}
+
+function updateTelemetryKpis(dets, latencyMs) {
+  if (kpiLatency) {
+    kpiLatency.textContent = typeof latencyMs === "number" ? `${latencyMs} ms` : "-";
+  }
+  const logEl = $("detectionLog");
+  const logCountTag = $("logCountTag");
+  if (!dets || dets.length === 0) {
+    if (kpiDistance) {
+      kpiDistance.textContent = "-";
+      kpiDistance.classList.remove("danger");
+    }
+    if (kpiDirection) {
+      kpiDirection.textContent = "-";
+    }
+    if (logCountTag) {
+      logCountTag.textContent = isRunning ? "0건 감지" : "대기 중";
+    }
+    if (logEl && !isRunning) {
+      logEl.innerHTML =
+        '<p class="log-empty">스캔 또는 데모를 시작하면 프레임별 분할 객체와 거리·방위 판정이 기록됩니다.</p>';
+    } else if (logEl) {
+      logEl.innerHTML = '<p class="log-empty">현재 프레임에서 감지된 위험 요소가 없습니다.</p>';
+    }
+    return;
+  }
+  const sorted = [...dets].sort((a, b) => a.distance_m - b.distance_m);
+  const nearest = sorted[0];
+  if (kpiDistance) {
+    kpiDistance.innerHTML = `${nearest.distance_m.toFixed(1)} m <span class="kpi-unit">· ${nearest.label_ko}</span>`;
+    kpiDistance.classList.toggle("danger", nearest.severity >= 3 && nearest.distance_m <= 2.5);
+  }
+  if (kpiDirection) {
+    kpiDirection.textContent = `${nearest.clock_direction || 12}시 방향`;
+  }
+  if (logCountTag) {
+    logCountTag.textContent = `${sorted.length}건 감지`;
+  }
+  if (logEl) {
+    logEl.innerHTML = sorted
+      .slice(0, 4)
+      .map(
+        (d) =>
+          `<div class="log-row num"><span class="log-row-name">${d.label_ko}</span><span class="log-row-meta">${d.clock_direction || 12}시 · ${d.distance_m.toFixed(1)} m</span></div>`
+      )
+      .join("");
+  }
 }
 
 function renderChips() {
   const chipsContainer = $("chips");
+  if (!chipsContainer) return;
   chipsContainer.innerHTML = "";
   chipElements.clear();
   for (const h of hazards) {
-    const chip = document.createElement("span");
+    const chip = document.createElement("button");
+    chip.type = "button";
     chip.className = `chip sev${h.severity}` + (selectedConcepts.has(h.key) ? "" : " off");
     chip.textContent = h.label_ko;
     chip.title = `${h.prompt || h.label_ko} (눌러서 켜기/끄기)`;
@@ -96,9 +155,13 @@ function renderChips() {
 }
 
 async function loadStatus() {
+  const originUrl = window.location.origin;
   if ($("qrUrl")) {
-    $("qrUrl").href = window.location.origin;
-    $("qrUrl").textContent = window.location.origin;
+    $("qrUrl").href = originUrl;
+    $("qrUrl").textContent = originUrl;
+  }
+  if ($("inlineQrUrl")) {
+    $("inlineQrUrl").textContent = originUrl;
   }
   try {
     const res = await fetch("/api/status");
@@ -110,7 +173,7 @@ async function loadStatus() {
     renderStatus();
     renderChips();
   } catch {
-    statusEl.textContent = "서버 연결 확인 중…";
+    statusEl.textContent = "서버 연결 확인 중";
   }
 }
 
@@ -135,8 +198,8 @@ function registerFailure(reason) {
   unknownBadge.hidden = false;
   unknownBadge.textContent =
     failCount >= 3
-      ? `확인 불가 — 스캔 ${failCount}회 연속 실패 (${reason})`
-      : `확인 불가 — ${reason}`;
+      ? `확인 불가 · 스캔 ${failCount}회 연속 실패 (${reason})`
+      : `확인 불가 · ${reason}`;
   scanDot.className = "scan-dot error";
   if (failCount >= 3) renderStatus(`스캔 실패 ${failCount}회 연속: ${reason}`);
 }
@@ -148,7 +211,7 @@ function registerSuccess(latencyMs) {
   if (typeof latencyMs === "number") {
     latencyPill.textContent = `${latencyMs} ms`;
     latencyPill.className =
-      "latency-pill " + (latencyMs <= 1500 ? "fast" : "warn");
+      "latency-pill num " + (latencyMs <= 1500 ? "fast" : "warn");
   }
 }
 
@@ -239,6 +302,7 @@ async function scanOnce(reset) {
     const dets = data.detections || [];
     drawBoxes(dets);
     highlightDetectedChips(dets);
+    updateTelemetryKpis(dets, reportedMs);
 
     // PRD 9.2: 3.0s alert validity window check on live scans
     if (isRealLive && clientRttMs > ALERT_VALIDITY_MS) {
@@ -295,7 +359,7 @@ function showImmediateBanner(det) {
   if (!banner.hidden) return;
   const dir = det.clock_direction || 12;
   banner.hidden = false;
-  banner.textContent = `🎯 ${dir}시 방향 ${det.distance_m.toFixed(1)}m ${det.label_ko} 포착`;
+  banner.textContent = `${dir}시 방향 ${det.distance_m.toFixed(1)}m ${det.label_ko} 포착`;
   banner.className = "alert-banner" + (det.severity < 3 ? " caution" : "");
 }
 
@@ -326,24 +390,22 @@ function drawBoxes(dets) {
     const ph = h * canvas.height;
 
     const color =
-      d.severity === 3 ? "#ff3b30" : d.severity === 2 ? "#ff9f0a" : "#ffd60a";
+      d.severity === 3 ? "#e5484d" : d.severity === 2 ? "#e5a93b" : "#c6f24e";
 
     ctx.fillStyle =
       d.severity === 3
-        ? "rgba(255, 59, 48, 0.14)"
+        ? "rgba(229, 72, 77, 0.16)"
         : d.severity === 2
-        ? "rgba(255, 159, 10, 0.12)"
-        : "rgba(255, 214, 10, 0.10)";
+        ? "rgba(229, 169, 59, 0.14)"
+        : "rgba(198, 242, 78, 0.12)";
     ctx.fillRect(px, py, pw, ph);
 
     ctx.strokeStyle = color;
-    ctx.lineWidth = 2;
-    ctx.setLineDash([6, 4]);
+    ctx.lineWidth = 1.5;
     ctx.strokeRect(px, py, pw, ph);
-    ctx.setLineDash([]);
 
-    const corner = Math.max(12, Math.min(26, Math.min(pw, ph) * 0.22));
-    ctx.lineWidth = 3.5;
+    const corner = Math.max(10, Math.min(22, Math.min(pw, ph) * 0.2));
+    ctx.lineWidth = 3;
     ctx.beginPath();
     ctx.moveTo(px, py + corner);
     ctx.lineTo(px, py);
@@ -361,31 +423,31 @@ function drawBoxes(dets) {
 
     const confStr =
       typeof d.confidence === "number" ? ` · ${Math.round(d.confidence * 100)}%` : "";
-    const label = `${d.label_ko} ${d.distance_m.toFixed(1)}m${confStr}`;
-    ctx.font = "700 14px -apple-system, BlinkMacSystemFont, system-ui, sans-serif";
+    const label = `${d.label_ko} · ${d.distance_m.toFixed(1)}m${confStr}`;
+    ctx.font = "600 13px Inter, -apple-system, BlinkMacSystemFont, sans-serif";
     const textW = ctx.measureText(label).width;
     const pillW = textW + 16;
-    const pillH = 26;
+    const pillH = 24;
     const pillX = Math.max(6, Math.min(canvas.width - pillW - 6, px));
     const pillY = py >= pillH + 6 ? py - pillH - 4 : py + 6;
 
     ctx.fillStyle = color;
     ctx.beginPath();
     if (ctx.roundRect) {
-      ctx.roundRect(pillX, pillY, pillW, pillH, 7);
+      ctx.roundRect(pillX, pillY, pillW, pillH, 4);
     } else {
       ctx.rect(pillX, pillY, pillW, pillH);
     }
     ctx.fill();
 
-    ctx.fillStyle = "#080c10";
-    ctx.fillText(label, pillX + 8, pillY + 18);
+    ctx.fillStyle = "#000000";
+    ctx.fillText(label, pillX + 8, pillY + 16);
   }
 }
 
 function fireAlert(alert) {
   banner.hidden = false;
-  banner.textContent = `⚠️ ${alert.text_ko}`;
+  banner.textContent = `위험 경고 · ${alert.text_ko}`;
   banner.className =
     "alert-banner" + (alert.level === "caution" ? " caution" : "");
 
@@ -445,6 +507,7 @@ async function startLiveScan() {
     emptyAlertFrames = 0;
     msg.hidden = true;
     banner.hidden = true;
+    stage.classList.add("live-active");
     stage.classList.remove("demo-bg");
     if (serverMode !== "live") {
       demoBadge.textContent = "스텁 시뮬레이션 중 (카메라 프리뷰 + 데모 판정)";
@@ -454,7 +517,7 @@ async function startLiveScan() {
     }
     registerSuccess();
 
-    btnLive.textContent = "⏹ 스캔 중지";
+    btnLive.textContent = "스캔 중지";
     btnLive.classList.remove("primary");
     btnLive.classList.add("stop");
     if (btnDemo) btnDemo.disabled = true;
@@ -463,7 +526,7 @@ async function startLiveScan() {
   } catch {
     msg.hidden = false;
     msgText.textContent =
-      "카메라 권한이 거부되었거나 카메라를 쓸 수 없습니다. 카메라 권한을 허용하거나 [▶ 데모] 모드로 확인해 보세요.";
+      "카메라 권한이 거부되었거나 카메라를 사용할 수 없습니다. 카메라 권한을 허용하거나 [데모 재생] 모드로 확인해 보세요.";
   }
 }
 
@@ -477,12 +540,13 @@ function startDemoMode() {
   emptyAlertFrames = 0;
   msg.hidden = true;
   banner.hidden = true;
+  stage.classList.remove("live-active");
   stage.classList.add("demo-bg");
-  demoBadge.textContent = "데모 장면 재생 중 (카메라 아님)";
+  demoBadge.textContent = "데모 장면 재생 중 (실제 카메라 아님)";
   demoBadge.hidden = false;
   registerSuccess();
 
-  btnLive.textContent = "⏹ 데모 중지";
+  btnLive.textContent = "데모 중지";
   btnLive.classList.remove("primary");
   btnLive.classList.add("stop");
   if (btnDemo) btnDemo.disabled = true;
@@ -500,17 +564,19 @@ function stopAll(note) {
     stream = null;
   }
   video.srcObject = null;
+  stage.classList.remove("live-active");
   stage.classList.remove("demo-bg");
   demoBadge.hidden = true;
   banner.hidden = true;
   unknownBadge.hidden = true;
   scanDot.className = "scan-dot";
-  latencyPill.textContent = "-- ms";
-  latencyPill.className = "latency-pill";
+  latencyPill.textContent = "- ms";
+  latencyPill.className = "latency-pill num";
   highlightDetectedChips([]);
+  updateTelemetryKpis([], null);
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  btnLive.textContent = "📷 실시간 스캔 시작";
+  btnLive.textContent = "실시간 스캔 시작";
   btnLive.classList.remove("stop");
   btnLive.classList.add("primary");
   if (btnDemo) btnDemo.disabled = false;
@@ -520,12 +586,12 @@ function stopAll(note) {
     msgText.textContent = note;
   } else {
     msgText.textContent =
-      "카메라로 등산로나 테스트 영상을 비추면 텍스트 프롬프트로 정의된 위험 요소를 분할·추적하고, 위험 거리 진입 시 방향과 거리를 음성·진동으로 경고합니다.";
+      "카메라로 등산로나 테스트 영상을 비추면 텍스트 프롬프트로 정의된 위험 요소를 픽셀 단위로 분할·추적하고, 위험 반경 진입 시 방향과 거리를 음성·진동으로 즉시 경고합니다.";
   }
 }
 
 btnLive.onclick = () => {
-  if (isRunning) stopAll("중지됨. 다시 시작할 수 있습니다.");
+  if (isRunning) stopAll("중지됨 · 다시 스캔을 시작할 수 있습니다.");
   else startLiveScan();
 };
 if (btnStartHero) btnStartHero.onclick = () => startLiveScan();
@@ -535,7 +601,11 @@ if (btnDemoHero) btnDemoHero.onclick = () => startDemoMode();
 if (btnAudio) {
   btnAudio.onclick = () => {
     audioEnabled = !audioEnabled;
-    btnAudio.textContent = audioEnabled ? "🔊 음성 ON" : "🔇 음성 OFF";
+    if (audioLabel) {
+      audioLabel.textContent = audioEnabled ? "음성 켜짐" : "음성 꺼짐";
+    } else {
+      btnAudio.textContent = audioEnabled ? "음성 켜짐" : "음성 꺼짐";
+    }
     btnAudio.classList.toggle("muted", !audioEnabled);
     if (!audioEnabled && window.speechSynthesis) {
       speechSynthesis.cancel();
@@ -580,7 +650,7 @@ if (btnVoiceConcept && conceptNameInput) {
   btnVoiceConcept.onclick = () => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) {
-      conceptNameInput.placeholder = "브라우저 음성인식 미지원 — 텍스트로 입력하세요";
+      conceptNameInput.placeholder = "음성인식 미지원 브라우저 · 텍스트로 입력하세요";
       conceptNameInput.focus();
       return;
     }
@@ -588,16 +658,16 @@ if (btnVoiceConcept && conceptNameInput) {
     rec.lang = "ko-KR";
     rec.interimResults = false;
     rec.maxAlternatives = 1;
-    btnVoiceConcept.textContent = "🔴";
+    btnVoiceConcept.textContent = "듣는 중";
     rec.onresult = (ev) => {
       const transcript = ev.results[0][0].transcript.trim();
       if (transcript) conceptNameInput.value = transcript;
     };
     rec.onend = () => {
-      btnVoiceConcept.textContent = "🎙";
+      btnVoiceConcept.textContent = "음성 입력";
     };
     rec.onerror = () => {
-      btnVoiceConcept.textContent = "🎙";
+      btnVoiceConcept.textContent = "음성 입력";
     };
     rec.start();
   };
@@ -605,6 +675,9 @@ if (btnVoiceConcept && conceptNameInput) {
 
 if (btnQrModal && qrPanel) {
   btnQrModal.onclick = () => qrPanel.classList.add("open");
+}
+if (btnExpandQr && qrPanel) {
+  btnExpandQr.onclick = () => qrPanel.classList.add("open");
 }
 if (btnCloseQr && qrPanel) {
   btnCloseQr.onclick = () => qrPanel.classList.remove("open");
@@ -620,9 +693,9 @@ if ($("btnCopyUrl")) {
     const url = window.location.origin;
     try {
       await navigator.clipboard.writeText(url);
-      $("btnCopyUrl").textContent = "✅ URL 복사 완료!";
+      $("btnCopyUrl").textContent = "복사됨";
       setTimeout(() => {
-        $("btnCopyUrl").textContent = "🔗 접속 URL 복사";
+        $("btnCopyUrl").textContent = "URL 복사";
       }, 2000);
     } catch {}
   };

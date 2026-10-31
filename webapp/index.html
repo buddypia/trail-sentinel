@@ -1,104 +1,227 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="ko" data-theme="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>Trail Sentinel — Meta SAM 3.1 실시간 위험 감지 HUD</title>
+<title>Trail Sentinel · Meta SAM 3.1 실시간 등산로 위험 감지 HUD</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%23000'/%3E%3Cpath d='M8 2.5L14 13H2L8 2.5Z' stroke='%23c6f24e' stroke-width='1.5' fill='none'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div class="app-shell">
-  <main id="stage" class="viewfinder">
-    <video id="cam" autoplay playsinline muted></video>
-    <div class="reticle" aria-hidden="true"></div>
-    <canvas id="overlay"></canvas>
-
-    <!-- Top Floating HUD Bar -->
-    <header class="hud-top">
-      <div class="brand-group">
-        <span id="scanDot" class="scan-dot"></span>
-        <div>
-          <h1>Trail Sentinel</h1>
-          <p id="status" class="telemetry">Meta SAM 3.1 · 상태 확인 중…</p>
-        </div>
-      </div>
-      <div class="hud-actions">
-        <span id="latencyPill" class="latency-pill">-- ms</span>
-        <button id="btnAudio" type="button" class="icon-btn" title="음성 경고 켜기/끄기">🔊 음성 ON</button>
-        <button id="btnQrModal" type="button" class="icon-btn qr-toggle-btn" title="모바일 접속 QR 보기">📱 QR</button>
-      </div>
-    </header>
-
-    <!-- Honesty & Status Badges (PRD F6, 9.2, 9.4) -->
-    <div id="demoBadge" class="demo-badge" hidden>데모 장면 재생 중 (카메라 아님)</div>
-    <div id="alertBanner" class="alert-banner" hidden></div>
-    <div id="unknownBadge" class="unknown-badge" hidden>확인 불가 — 스캔 지연</div>
-
-    <!-- Center Start Prompt (Shown before scan starts) -->
-    <div id="message" class="start-overlay">
-      <div class="start-card">
-        <div class="start-badge">Meta SAM 3.1 + Muse Wonder · 개념 분할 & 능동 경고</div>
-        <h2>실시간 등산로 위험 센티넬</h2>
-        <p id="messageText">카메라로 등산로나 테스트 영상을 비추면 텍스트 프롬프트로 정의된 위험 요소를 분할·추적하고, 위험 거리 진입 시 방향과 거리를 음성·진동으로 경고합니다.</p>
-        <div class="hero-btn-group">
-          <button id="btnStartHero" type="button" class="hero-start-btn">📷 카메라 스캔 시작하기</button>
-          <button id="btnDemoHero" type="button" class="hero-demo-btn">▶ 히어로 데모 재생 (카메라 불필요)</button>
-        </div>
+<div class="app-shell" data-ui>
+  <!-- Top Instrument Bar (Ruled T-Frame Header) -->
+  <header class="hud-top">
+    <div class="brand-group">
+      <span id="scanDot" class="scan-dot" aria-hidden="true"></span>
+      <svg class="brand-mark" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <path d="M8 1.5L14.5 13.5H1.5L8 1.5Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+        <circle cx="8" cy="9.5" r="1.5" fill="currentColor"/>
+      </svg>
+      <div class="brand-titles">
+        <h1>Trail Sentinel</h1>
+        <p id="status" class="telemetry num">Meta SAM 3.1 · 상태 확인 중</p>
       </div>
     </div>
 
-    <!-- Bottom Thumb-Zone Floating Dock -->
-    <section class="hud-bottom">
-      <div class="chips-bar">
-        <div id="chips" class="chips" aria-label="감지 대상 필터"></div>
-        <button id="btnAddConcept" type="button" class="add-concept-chip" title="재학습 없이 새 위험 개념 추가 (F7)">＋ 개념 추가</button>
-      </div>
-
-      <!-- F7: Zero-retraining live custom concept bar -->
-      <form id="conceptForm" class="concept-form" hidden>
-        <input id="conceptNameInput" type="text" placeholder="새 위험 이름 (예: 쓰러진 나무)" maxlength="30" required>
-        <input id="conceptPromptInput" type="text" placeholder="영어 프롬프트 (선택: a fallen tree)" maxlength="80">
-        <button id="btnVoiceConcept" type="button" class="voice-btn" title="음성으로 개념 말하기">🎙</button>
-        <button type="submit" class="submit-concept-btn">추가</button>
-      </form>
-
-      <div class="dock-row">
-        <button id="btnLive" type="button" class="scan-toggle-btn primary">📷 실시간 스캔 시작</button>
-        <button id="btnDemo" type="button" class="demo-toggle-btn">▶ 데모</button>
-      </div>
-      <p class="safety-line">보조 도구입니다 — 안전을 보장하지 않으며 오탐·미탐이 있을 수 있으니 주변을 직접 확인하세요.</p>
-    </section>
-  </main>
-
-  <!-- Desktop Side Dock / Mobile Modal for QR Code -->
-  <aside id="qrPanel" class="qr-panel" aria-label="모바일 접속 QR 코드">
-    <div class="qr-card">
-      <div class="qr-card-header">
-        <h2>📱 핸드폰으로 바로 열기</h2>
-        <button id="btnCloseQr" type="button" class="close-qr-btn" aria-label="닫기">✕</button>
-      </div>
-      <p class="qr-desc">핸드폰 기본 카메라로 아래 QR 코드를 스캔하면 모바일 브라우저에서 전체화면 HUD로 바로 실행됩니다.</p>
-      <div class="qr-frame">
-        <img src="qr.png" alt="Trail Sentinel 모바일 접속 QR 코드" width="180" height="180">
-      </div>
-      <div class="qr-meta">
-        <div class="spec-row">
-          <span>개념 분할·추적</span>
-          <strong>Meta SAM 3.1 (Concept Segmentation)</strong>
-        </div>
-        <div class="spec-row">
-          <span>우선순위 판정</span>
-          <strong>Muse Wonder 역할 결정적 판정 (F4)</strong>
-        </div>
-        <div class="spec-row">
-          <span>감지 개념 (v1 + F7)</span>
-          <strong>뱀 · 말벌집 · 곰 · 멧돼지 · 낙석 · 미끄럼 + 커스텀</strong>
-        </div>
-      </div>
-      <a id="qrUrl" href="#" class="qr-link">현재 서버 주소</a>
-      <button id="btnCopyUrl" type="button" class="copy-btn">🔗 접속 URL 복사</button>
+    <div class="hud-actions">
+      <span id="latencyPill" class="latency-pill num">- ms</span>
+      <button id="btnAudio" type="button" class="control-btn" title="음성 경고 켜기/끄기">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <path d="M3 6H6L10 2.5V13.5L6 10H3V6Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+          <path d="M12.5 5.5C13.3 6.3 13.3 9.7 12.5 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        <span id="audioLabel">음성 켜짐</span>
+      </button>
+      <button id="btnQrModal" type="button" class="control-btn qr-toggle-btn" title="모바일 접속 QR 코드 보기">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <rect x="2" y="2" width="4.5" height="4.5" stroke="currentColor" stroke-width="1.5"/>
+          <rect x="9.5" y="2" width="4.5" height="4.5" stroke="currentColor" stroke-width="1.5"/>
+          <rect x="2" y="9.5" width="4.5" height="4.5" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M9.5 9.5H11.5V11.5H9.5V9.5ZM12 12H14V14H12V12ZM9.5 12.5H11V14H9.5V12.5ZM12.5 9.5H14V11H12.5V9.5Z" fill="currentColor"/>
+        </svg>
+        <span>모바일 QR</span>
+      </button>
     </div>
-  </aside>
+  </header>
+
+  <!-- Main Workspace Grid: Left Viewfinder + Right Instrument & QR Rail -->
+  <div class="workspace-grid">
+    <main id="stage" class="viewfinder">
+      <!-- Divided 4-KPI Telemetry Strip -->
+      <section class="kpi-strip" aria-label="실시간 계측 지표">
+        <div class="kpi-cell">
+          <span class="kpi-label">최근접 위험 거리</span>
+          <strong id="kpiDistance" class="kpi-value num">-</strong>
+        </div>
+        <div class="kpi-cell">
+          <span class="kpi-label">위험 방위각</span>
+          <strong id="kpiDirection" class="kpi-value num">-</strong>
+        </div>
+        <div class="kpi-cell">
+          <span class="kpi-label">파이프라인 지연</span>
+          <strong id="kpiLatency" class="kpi-value num">-</strong>
+        </div>
+        <div class="kpi-cell">
+          <span class="kpi-label">일일 호출 예산</span>
+          <strong id="kpiBudget" class="kpi-value num">0 / 200</strong>
+        </div>
+      </section>
+
+      <!-- Optical Stage Canvas -->
+      <div class="optical-frame">
+        <video id="cam" autoplay playsinline muted></video>
+        <div class="reticle" aria-hidden="true">
+          <span class="reticle-corner tl"></span>
+          <span class="reticle-corner tr"></span>
+          <span class="reticle-corner bl"></span>
+          <span class="reticle-corner br"></span>
+          <span class="reticle-cross"></span>
+        </div>
+        <canvas id="overlay"></canvas>
+
+        <!-- Honesty & Status Badges (PRD F6, 9.2, 9.4) -->
+        <div id="demoBadge" class="demo-badge" hidden>데모 장면 재생 중 (실제 카메라 아님)</div>
+        <div id="alertBanner" class="alert-banner" hidden></div>
+        <div id="unknownBadge" class="unknown-badge" hidden>확인 불가 · 스캔 지연</div>
+
+        <!-- Standby Instrument Panel (Shown before camera/demo starts) -->
+        <div id="message" class="start-overlay">
+          <div class="start-card">
+            <div class="start-main">
+              <p class="start-scope">Meta SAM 3.1 + Muse Wonder · 광학 분할 및 거리 판정</p>
+              <h2>전방 등산로 위험 요소 실시간 계측</h2>
+              <p id="messageText" class="start-copy">카메라로 등산로나 테스트 영상을 비추면 텍스트 프롬프트로 정의된 위험 요소를 픽셀 단위로 분할·추적하고, 위험 반경 진입 시 방향과 거리를 음성·진동으로 즉시 경고합니다.</p>
+              <div class="hero-btn-group">
+                <button id="btnStartHero" type="button" class="primary-btn">카메라 스캔 시작</button>
+                <button id="btnDemoHero" type="button" class="secondary-btn">히어로 데모 장면 재생 (프레임 0..60)</button>
+              </div>
+            </div>
+
+            <!-- In-App Instant QR Access inside Standby View -->
+            <div class="start-qr-box">
+              <div class="start-qr-head">
+                <span class="start-qr-title">스마트폰 카메라로 바로 열기</span>
+                <button id="btnExpandQr" type="button" class="text-action-btn">QR 크게 보기</button>
+              </div>
+              <div class="start-qr-row">
+                <a href="qr.png" target="_blank" rel="noopener" class="qr-thumb-wrap" title="모바일 접속 QR 코드">
+                  <img src="qr.png" alt="Trail Sentinel 앱 접속 QR 코드" width="88" height="88">
+                </a>
+                <div class="start-qr-info">
+                  <p class="start-qr-hint">핸드폰 기본 카메라로 스캔하면 모바일 브라우저에서 즉시 실행됩니다.</p>
+                  <code id="inlineQrUrl" class="inline-qr-url">http://localhost:8765</code>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Control Dock -->
+      <section class="hud-bottom">
+        <div class="chips-bar">
+          <span class="chips-label">분할 개념 필터</span>
+          <div id="chips" class="chips" aria-label="감지 대상 필터"></div>
+          <button id="btnAddConcept" type="button" class="add-concept-chip" title="재학습 없이 새 위험 개념 추가 (F7)">+ 개념 추가</button>
+        </div>
+
+        <!-- F7: Zero-retraining live custom concept bar -->
+        <form id="conceptForm" class="concept-form" hidden>
+          <input id="conceptNameInput" type="text" placeholder="새 위험 이름 (예: 쓰러진 나무)" maxlength="30" required aria-label="새 위험 이름">
+          <input id="conceptPromptInput" type="text" placeholder="영어 프롬프트 (선택: a fallen tree)" maxlength="80" aria-label="영어 프롬프트">
+          <button id="btnVoiceConcept" type="button" class="control-btn" title="음성으로 개념 입력">음성 입력</button>
+          <button type="submit" class="primary-btn compact">등록</button>
+        </form>
+
+        <div class="dock-row">
+          <div class="dock-actions">
+            <button id="btnLive" type="button" class="scan-toggle-btn primary">실시간 스캔 시작</button>
+            <button id="btnDemo" type="button" class="demo-toggle-btn">데모 재생</button>
+          </div>
+          <p class="safety-line">보조 도구입니다 · 안전을 보장하지 않으며 오탐·미탐이 있을 수 있으니 주변을 직접 확인하세요.</p>
+        </div>
+      </section>
+    </main>
+
+    <!-- Right Rail (Desktop) & Sheet Modal (Mobile) for QR Code + Live Telemetry -->
+    <aside id="qrPanel" class="qr-panel" aria-label="모바일 접속 QR 코드 및 시스템 계측">
+      <div class="qr-sheet-inner">
+        <section class="rail-card qr-card">
+          <div class="rail-card-header">
+            <h2>모바일 필드 HUD 즉시 연결</h2>
+            <button id="btnCloseQr" type="button" class="close-qr-btn" aria-label="QR 패널 닫기">닫기</button>
+          </div>
+          <p class="qr-desc">스마트폰 카메라로 아래 QR 코드를 스캔하면 현재 배포된 Trail Sentinel 웹앱에 즉시 접속합니다.</p>
+          <div class="qr-frame-row">
+            <div class="qr-frame">
+              <img id="qrImage" src="qr.png" alt="Trail Sentinel 모바일 접속 QR 코드" width="164" height="164">
+            </div>
+            <div class="qr-steps">
+              <div class="qr-step-item">
+                <span class="step-num num">1.</span>
+                <span>스마트폰 기본 카메라 앱 실행</span>
+              </div>
+              <div class="qr-step-item">
+                <span class="step-num num">2.</span>
+                <span>QR 스캔 후 배너를 눌러 접속</span>
+              </div>
+              <div class="qr-step-item">
+                <span class="step-num num">3.</span>
+                <span>카메라 스캔 또는 데모 재생 실행</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="joined-url-bar">
+            <a id="qrUrl" href="http://localhost:8765" class="qr-link">http://localhost:8765</a>
+            <button id="btnCopyUrl" type="button" class="copy-btn">URL 복사</button>
+          </div>
+        </section>
+
+        <section class="rail-card spec-card">
+          <div class="rail-card-header">
+            <h2>시스템 파이프라인 사양</h2>
+            <span class="status-tag">SAM 3.1 + Muse</span>
+          </div>
+          <dl class="spec-list">
+            <div class="spec-row">
+              <dt>개념 분할·추적</dt>
+              <dd>Meta SAM 3.1</dd>
+            </div>
+            <div class="spec-row">
+              <dt>우선순위 판정</dt>
+              <dd>Muse Wonder 역할 트리아지</dd>
+            </div>
+            <div class="spec-row">
+              <dt>경고 유효 기간</dt>
+              <dd class="num">3,000 ms (초과 시 폐기)</dd>
+            </div>
+            <div class="spec-row">
+              <dt>동일 객체 쿨다운</dt>
+              <dd class="num">4.5 s (중복 발화 억제)</dd>
+            </div>
+            <div class="spec-row">
+              <dt>기본 감지 개념</dt>
+              <dd>뱀 · 말벌집 · 곰 · 멧돼지 · 낙석 · 미끄럼</dd>
+            </div>
+          </dl>
+        </section>
+
+        <section class="rail-card log-card">
+          <div class="rail-card-header">
+            <h2>실시간 분할 감지 로그</h2>
+            <span id="logCountTag" class="log-count num">대기 중</span>
+          </div>
+          <div id="detectionLog" class="detection-log">
+            <p class="log-empty">스캔 또는 데모를 시작하면 프레임별 분할 객체와 거리·방위 판정이 기록됩니다.</p>
+          </div>
+        </section>
+      </div>
+    </aside>
+  </div>
 </div>
 
 <script src="app.js"></script>
