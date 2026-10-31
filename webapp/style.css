@@ -145,6 +145,36 @@ html, body {
   align-items: center;
   gap: 8px;
   flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.model-select-wrap {
+  display: inline-flex;
+  align-items: center;
+  height: var(--control-height);
+  background: var(--surface);
+  border: 1px solid var(--control);
+  border-radius: var(--radius-control);
+  padding: 0 8px 0 10px;
+  gap: 6px;
+}
+
+.model-select-prefix {
+  font-size: var(--fs-small);
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.model-select {
+  background: var(--surface);
+  color: var(--text);
+  border: none;
+  font-family: var(--font);
+  font-size: var(--fs-small);
+  font-weight: 500;
+  height: 100%;
+  outline: none;
+  cursor: pointer;
 }
 
 .latency-pill {
@@ -991,13 +1021,20 @@ html, body {
     --pad: 14px;
     --gap: 10px;
   }
+  .hud-top {
+    flex-wrap: wrap;
+  }
   .hud-top h1 {
     font-size: 17px;
     white-space: nowrap;
   }
   .telemetry,
-  .latency-pill {
+  .latency-pill,
+  .model-select-prefix {
     display: none;
+  }
+  .model-select {
+    max-width: 150px;
   }
   .kpi-strip {
     grid-template-columns: repeat(2, minmax(0, 1fr));

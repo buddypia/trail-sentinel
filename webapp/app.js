@@ -32,6 +32,11 @@ const btnQrModal = $("btnQrModal");
 const btnExpandQr = $("btnExpandQr");
 const btnCloseQr = $("btnCloseQr");
 const qrPanel = $("qrPanel");
+const modelSelect = $("modelSelect");
+const activeModelTag = $("activeModelTag");
+const modelModeDesc = $("modelModeDesc");
+const specModelName = $("specModelName");
+const specVerifyMode = $("specVerifyMode");
 const btnAddConcept = $("btnAddConcept");
 const conceptForm = $("conceptForm");
 const conceptNameInput = $("conceptNameInput");
@@ -41,14 +46,14 @@ const btnVoiceConcept = $("btnVoiceConcept");
 const shot = document.createElement("canvas");
 const shotCtx = shot.getContext("2d");
 
-const CAPTURE_TARGET_LONG = 640;
-const CAPTURE_MIN_SHORT = 288;
-const NEXT_LIVE_DELAY_MS = 280;
+const CAPTURE_TARGET_LONG = 416;
+const CAPTURE_MIN_SHORT = 240;
+const NEXT_LIVE_DELAY_MS = 160;
 const DEMO_TICK_MS = 1000;
 const FRAME_STEP = 5;
 const LAST_FRAME = 60;
 const SCAN_TIMEOUT_MS = 18000;
-const ALERT_VALIDITY_MS = 3000; // PRD 9.2: discard alerts arriving >3.0s after capture
+const ALERT_VALIDITY_MS = 5000; // Live network + model RTT guardrail
 
 let loopTimer = null;
 let stream = null;
@@ -61,16 +66,36 @@ let lastSpoken = "";
 let lastSpokenAt = 0;
 let emptyAlertFrames = 0;
 let serverMode = "stub";
+let selectedModel = "sam-3.1-hybrid";
+let modelsMeta = new Map();
 let hazards = [];
 let selectedConcepts = new Set();
 let chipElements = new Map();
 let failCount = 0;
 let lastStatus = null;
 
+function syncModelSpecUI() {
+  const m = modelsMeta.get(selectedModel);
+  const shortLabel = m ? m.short_label : selectedModel;
+  if (activeModelTag) activeModelTag.textContent = shortLabel;
+  if (specModelName) specModelName.textContent = shortLabel;
+  if (modelModeDesc && m && m.description) {
+    modelModeDesc.textContent = m.description;
+  }
+  if (specVerifyMode) {
+    specVerifyMode.textContent =
+      selectedModel === "sam-3.1"
+        ? "비활성 (순수 형태 마스크 분할)"
+        : "활성 (곰·뱀 등 정밀 시각 검증)";
+  }
+}
+
 function renderStatus(extra) {
   if (!lastStatus) return;
   const isLive = lastStatus.mode === "live";
-  const engineLabel = isLive ? "라이브 (Meta SAM 3.1)" : "스텁 (데모 픽스처)";
+  const m = modelsMeta.get(selectedModel);
+  const modelLabel = m ? m.short_label : "SAM 3.1 + Muse Spark";
+  const engineLabel = isLive ? `라이브 (${modelLabel})` : "스텁 (데모 픽스처)";
   statusEl.textContent =
     `${engineLabel} · 호출 ${lastStatus.calls_today}/${lastStatus.daily_cap}` +
     (extra ? ` · ${extra}` : "");
@@ -119,10 +144,10 @@ function updateTelemetryKpis(dets, latencyMs) {
   if (logEl) {
     logEl.innerHTML = sorted
       .slice(0, 4)
-      .map(
-        (d) =>
-          `<div class="log-row num"><span class="log-row-name">${d.label_ko}</span><span class="log-row-meta">${d.clock_direction || 12}시 · ${d.distance_m.toFixed(1)} m</span></div>`
-      )
+      .map((d) => {
+        const verifyNote = d.verify_ko ? ` · ${d.verify_ko}` : "";
+        return `<div class="log-row num"><span class="log-row-name">${d.label_ko}${verifyNote}</span><span class="log-row-meta">${d.clock_direction || 12}시 · ${d.distance_m.toFixed(1)} m</span></div>`;
+      })
       .join("");
   }
 }
@@ -168,6 +193,17 @@ async function loadStatus() {
     const s = await res.json();
     lastStatus = s;
     serverMode = s.mode;
+    if (Array.isArray(s.models)) {
+      modelsMeta.clear();
+      for (const m of s.models) {
+        modelsMeta.set(m.id, m);
+      }
+    }
+    if (s.default_model && modelsMeta.has(s.default_model)) {
+      selectedModel = s.default_model;
+      if (modelSelect) modelSelect.value = selectedModel;
+    }
+    syncModelSpecUI();
     hazards = s.hazards || [];
     selectedConcepts = new Set(hazards.map((h) => h.key));
     renderStatus();
@@ -249,6 +285,7 @@ async function scanOnce(reset) {
         image,
         concepts: [...selectedConcepts],
         mode: "live",
+        model: selectedModel,
         reset: !!reset,
       };
     } else {
@@ -423,7 +460,8 @@ function drawBoxes(dets) {
 
     const confStr =
       typeof d.confidence === "number" ? ` · ${Math.round(d.confidence * 100)}%` : "";
-    const label = `${d.label_ko} · ${d.distance_m.toFixed(1)}m${confStr}`;
+    const verifyStr = d.verify_ko ? ` [${d.verify_ko}]` : "";
+    const label = `${d.label_ko} · ${d.distance_m.toFixed(1)}m${confStr}${verifyStr}`;
     ctx.font = "600 13px Inter, -apple-system, BlinkMacSystemFont, sans-serif";
     const textW = ctx.measureText(label).width;
     const pillW = textW + 16;
@@ -698,6 +736,14 @@ if ($("btnCopyUrl")) {
         $("btnCopyUrl").textContent = "URL 복사";
       }, 2000);
     } catch {}
+  };
+}
+
+if (modelSelect) {
+  modelSelect.onchange = () => {
+    selectedModel = modelSelect.value;
+    syncModelSpecUI();
+    renderStatus(`모델 변경됨`);
   };
 }
 

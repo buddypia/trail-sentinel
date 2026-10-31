@@ -40,6 +40,7 @@ from trail_sentinel.config import (
 from trail_sentinel.meta_transport import (
     MetaSAMTransport,
     ground_plane_distance_estimator,
+    resolve_helper_path,
 )
 from trail_sentinel.sam_client import (
     Detection,
@@ -49,6 +50,13 @@ from trail_sentinel.sam_client import (
     StubSAMClient,
 )
 from trail_sentinel.triage import COOLDOWN_FRAMES, evaluate
+from trail_sentinel.vision_router import (
+    AVAILABLE_MODELS,
+    DEFAULT_MODEL_ID,
+    MODEL_BY_ID,
+    get_adc_access_token,
+    scan_with_vertex_vision,
+)
 
 ROOT = Path(__file__).parent
 WEBAPP = ROOT / "webapp"
@@ -59,8 +67,8 @@ FPS = 10.0
 # One SAM call takes ~3s and costs USD 0.0025 per concept. The server-side
 # minimum interval caps the live scan rate regardless of client behaviour;
 # the per-call timeout follows PRD 9.4 (10s, the tick then fails honestly).
-LIVE_ENABLED = os.environ.get("TRAIL_SENTINEL_LIVE") == "1"
-LIVE_MIN_INTERVAL_S = float(os.environ.get("LIVE_MIN_INTERVAL_S", "0.45"))
+LIVE_ENABLED = os.environ.get("TRAIL_SENTINEL_LIVE", "1") == "1"
+LIVE_MIN_INTERVAL_S = float(os.environ.get("LIVE_MIN_INTERVAL_S", "0.20"))
 LIVE_CALL_TIMEOUT_S = 10.0
 # Same span as the stub cooldown (COOLDOWN_FRAMES at FPS), in wall-clock
 # seconds: repeat voice alerts for one track stay at least this far apart.
@@ -68,6 +76,7 @@ LIVE_ALERT_COOLDOWN_S = COOLDOWN_FRAMES / FPS
 MAX_IMAGE_BYTES = 8 * 1024 * 1024
 MAX_BODY_BYTES = 16 * 1024 * 1024
 _IMAGE_MEDIA_TYPES = ("image/jpeg", "image/png", "image/webp")
+_active_model_id = os.environ.get("TRAIL_SENTINEL_MODEL", DEFAULT_MODEL_ID)
 
 _sam = StubSAMClient(ROOT / "fixtures")
 _budget = CallBudget(
@@ -88,7 +97,7 @@ def _severity(concept: str) -> int:
     return next(h.severity for h in HAZARDS if h.key == concept)
 
 
-def _detection_payload(d: Detection) -> dict:
+def _detection_payload(d: Detection, verify_ko: str | None = None) -> dict:
     payload = {
         "concept": d.concept,
         "label_ko": _label(d.concept),
@@ -98,6 +107,8 @@ def _detection_payload(d: Detection) -> dict:
         "severity": _severity(d.concept),
         "confidence": d.confidence,
     }
+    if verify_ko:
+        payload["verify_ko"] = verify_ko
     if d.mask_png and d.mask_rect:
         payload["mask_png"] = d.mask_png
         payload["mask_rect"] = d.mask_rect
@@ -180,19 +191,23 @@ def decode_image_data_url(value) -> tuple[bytes, str]:
 
 
 class LiveScanner:
-    """Live scans: one image x N concepts, fanned out in parallel.
+    """Live scans: supports both multi-model single-pass vision and per-concept SAM.
 
-    Each concept is a separate provider call (~3s each), so the concepts
-    run in threads and join into one scan result. One SegmentRequest per
-    concept means RealSAMClient spends exactly one CallBudget unit per
-    provider call — the budget counts concept calls, not scans.
+    When ``vision_fn`` is configured (production server), scans run in a
+    single fast pass for the selected Meta AI model (``sam-3.1-hybrid``,
+    ``muse-spark-1.3``, ``muse-wonder-1.0``, ``muse-glimmer``) spending
+    1 CallBudget unit per scan, or fan out per concept via ``self._client``
+    when ``model == 'sam-3.1'`` and the local connector helper is present
+    (or when ``vision_fn`` is ``None`` in unit tests).
     """
 
     def __init__(self, client, budget: CallBudget, *,
-                 min_interval_s: float = LIVE_MIN_INTERVAL_S):
+                 min_interval_s: float = LIVE_MIN_INTERVAL_S,
+                 vision_fn=None):
         self._client = client
         self._budget = budget
         self._min_interval_s = min_interval_s
+        self._vision_fn = vision_fn
         self._lock = threading.Lock()
         self._last_start: float | None = None
         self._prev_scan_start: float | None = None
@@ -200,9 +215,14 @@ class LiveScanner:
         self._last_alert_at: dict[str, float] = {}
         self._seq = 0
 
-    def scan(self, image_bytes: bytes, media_type: str, concepts) -> dict:
+    def scan(self, image_bytes: bytes, media_type: str, concepts, *,
+             model: str | None = None) -> dict:
         keys = filter_concepts(concepts)
-        base = {"mode": "live", "calls_today": self._budget.used_today(),
+        chosen_model = (
+            model if model in MODEL_BY_ID else _active_model_id
+        )
+        base = {"mode": "live", "model": chosen_model,
+                "calls_today": self._budget.used_today(),
                 "cap": self._budget.daily_cap}
         if not keys:
             return {**base, "error": "no_valid_concepts",
@@ -220,10 +240,18 @@ class LiveScanner:
                         "detections": [], "alert": None}
             self._last_start = now
 
+        use_single_pass_vision = (
+            self._vision_fn is not None
+            and not (
+                chosen_model == "sam-3.1" and resolve_helper_path().is_file()
+            )
+        )
+        needed_budget = 1 if use_single_pass_vision else len(keys)
+
         # Pre-flight: refuse before any provider call if the whole scan
         # cannot fit in today's cap. Mid-scan races still hard-stop in
         # CallBudget.spend per concept call.
-        if self._budget.used_today() + len(keys) > self._budget.daily_cap:
+        if self._budget.used_today() + needed_budget > self._budget.daily_cap:
             return {**base, "error": "daily_call_cap_reached",
                     "detections": [], "alert": None}
 
@@ -231,31 +259,52 @@ class LiveScanner:
         self._seq += 1
         seq = self._seq
 
-        def run_concept(key: str) -> list[Detection]:
-            hazard = HAZARD_BY_KEY[key]
-            request = SegmentRequest.for_image(
-                image_bytes,
-                frame_idx=seq,
-                image_media_type=media_type,
-                prompts=(HazardPrompt(key=key, text=hazard.prompt),),
-            )
-            return self._client.segment_request(request)
-
         detections: list[Detection] = []
+        verify_notes: dict[str, str] = {}
         errors: list[str] = []
         budget_hit = False
-        with ThreadPoolExecutor(max_workers=len(keys)) as pool:
-            futures = {pool.submit(run_concept, key): key for key in keys}
-            for future in as_completed(futures):
-                key = futures[future]
-                try:
-                    detections.extend(future.result())
-                except BudgetExceeded:
-                    budget_hit = True
-                except Exception as exc:  # timeout, helper or API failure
-                    errors.append(f"{key}: {exc}")
+
+        if use_single_pass_vision:
+            try:
+                self._budget.spend(1)
+                detections, verify_notes = self._vision_fn(
+                    image_bytes,
+                    media_type,
+                    keys,
+                    frame_idx=seq,
+                    model_id=chosen_model,
+                )
+            except BudgetExceeded:
+                budget_hit = True
+            except Exception as exc:
+                errors.append(f"{chosen_model}: {exc}")
+        else:
+            def run_concept(key: str) -> list[Detection]:
+                hazard = HAZARD_BY_KEY[key]
+                request = SegmentRequest.for_image(
+                    image_bytes,
+                    frame_idx=seq,
+                    image_media_type=media_type,
+                    prompts=(HazardPrompt(key=key, text=hazard.prompt),),
+                )
+                return self._client.segment_request(request)
+
+            with ThreadPoolExecutor(max_workers=len(keys)) as pool:
+                futures = {pool.submit(run_concept, key): key for key in keys}
+                for future in as_completed(futures):
+                    key = futures[future]
+                    try:
+                        detections.extend(future.result())
+                    except BudgetExceeded:
+                        budget_hit = True
+                    except Exception as exc:  # timeout, helper or API failure
+                        errors.append(f"{key}: {exc}")
+
         latency_ms = int((time.monotonic() - started) * 1000)
-        base = {"mode": "live", "frame_index": seq, "latency_ms": latency_ms,
+        model_info = MODEL_BY_ID.get(chosen_model, MODEL_BY_ID[DEFAULT_MODEL_ID])
+        base = {"mode": "live", "model": chosen_model,
+                "model_label": model_info["short_label"],
+                "frame_index": seq, "latency_ms": latency_ms,
                 "calls_today": self._budget.used_today(),
                 "cap": self._budget.daily_cap}
 
@@ -291,9 +340,14 @@ class LiveScanner:
                     self._last_alert_at[track] = started
                     alert = _alert_payload(decision)
 
-        result = {**base,
-                  "detections": [_detection_payload(d) for d in detections],
-                  "alert": alert}
+        result = {
+            **base,
+            "detections": [
+                _detection_payload(d, verify_notes.get(d.track_id))
+                for d in detections
+            ],
+            "alert": alert,
+        }
         if errors:
             result["partial_errors"] = errors
         return result
@@ -307,19 +361,23 @@ def _make_live_scanner() -> LiveScanner:
         enabled=True,
         distance_estimator=ground_plane_distance_estimator,
     )
-    return LiveScanner(client, _budget)
+    return LiveScanner(client, _budget, vision_fn=scan_with_vertex_vision)
 
 
 _live_scanner = _make_live_scanner() if LIVE_ENABLED else None
+if LIVE_ENABLED:
+    threading.Thread(target=lambda: get_adc_access_token(), daemon=True).start()
 
 
 def status() -> dict:
     return {
         "mode": "live" if LIVE_ENABLED else "stub",
-        "engine": "sam-3.1" if LIVE_ENABLED else "stub",
+        "engine": _active_model_id if LIVE_ENABLED else "stub",
         "live_enabled": LIVE_ENABLED,
         "calls_today": _budget.used_today(),
         "daily_cap": _budget.daily_cap,
+        "default_model": _active_model_id,
+        "models": list(AVAILABLE_MODELS),
         "hazards": [
             {
                 "key": h.key,
@@ -436,7 +494,10 @@ class Handler(SimpleHTTPRequestHandler):
                         "detections": [], "alert": None}, 400)
             return
         result = _live_scanner.scan(
-            image_bytes, media_type, body.get("concepts")
+            image_bytes,
+            media_type,
+            body.get("concepts"),
+            model=body.get("model"),
         )
         code = 200
         if result.get("error") in ("daily_call_cap_reached", "scan_too_soon"):

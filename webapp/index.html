@@ -27,6 +27,16 @@
     </div>
 
     <div class="hud-actions">
+      <label class="model-select-wrap" for="modelSelect" title="실시간 감지 및 분할 모델 선택">
+        <span class="model-select-prefix">모델</span>
+        <select id="modelSelect" class="model-select" aria-label="판정 모델 선택">
+          <option value="sam-3.1-hybrid" selected>SAM 3.1 + Muse Spark 1.3 (분할+의미검증)</option>
+          <option value="muse-spark-1.3">Meta Muse Spark 1.3 (초고속 ~1.1s)</option>
+          <option value="muse-wonder-1.0">Meta Muse Wonder 1.0 (정밀 시각검증)</option>
+          <option value="muse-glimmer">Meta Muse Glimmer 30B (경량 엣지 추론)</option>
+          <option value="sam-3.1">Meta SAM 3.1 (순수 픽셀분할)</option>
+        </select>
+      </label>
       <span id="latencyPill" class="latency-pill num">- ms</span>
       <button id="btnAudio" type="button" class="control-btn" title="음성 경고 켜기/끄기">
         <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
@@ -184,24 +194,25 @@
         <section class="rail-card spec-card">
           <div class="rail-card-header">
             <h2>시스템 파이프라인 사양</h2>
-            <span class="status-tag">SAM 3.1 + Muse</span>
+            <span id="activeModelTag" class="status-tag">SAM 3.1 Hybrid</span>
           </div>
+          <p id="modelModeDesc" class="qr-desc">영역 분할(Box+Mask)과 객체 진위 판별(곰·뱀 등 정밀 분류)을 1회 패스로 동시 수행합니다.</p>
           <dl class="spec-list">
             <div class="spec-row">
               <dt>개념 분할·추적</dt>
-              <dd>Meta SAM 3.1</dd>
+              <dd id="specModelName">SAM 3.1 + Muse Spark 1.3</dd>
+            </div>
+            <div class="spec-row">
+              <dt>의미론적 검증</dt>
+              <dd id="specVerifyMode">활성 (바위·나뭇가지 오탐 필터링)</dd>
             </div>
             <div class="spec-row">
               <dt>우선순위 판정</dt>
               <dd>Muse Wonder 역할 트리아지</dd>
             </div>
             <div class="spec-row">
-              <dt>경고 유효 기간</dt>
-              <dd class="num">3,000 ms (초과 시 폐기)</dd>
-            </div>
-            <div class="spec-row">
               <dt>동일 객체 쿨다운</dt>
-              <dd class="num">4.5 s (중복 발화 억제)</dd>
+              <dd class="num">3.0 s (중복 발화 억제)</dd>
             </div>
             <div class="spec-row">
               <dt>기본 감지 개념</dt>

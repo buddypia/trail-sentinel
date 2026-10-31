@@ -134,6 +134,43 @@ class LiveScannerTests(unittest.TestCase):
             self.assertEqual(result["error"], "no_valid_concepts")
             self.assertEqual(client.calls, [])
 
+    def test_single_pass_vision_router_model_selection(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            budget = CallBudget(daily_cap=50, counter_path=Path(tmp) / "c.json")
+            client = FakeClient(budget)
+            called_models: list[str] = []
+
+            def fake_vision(image_bytes, media_type, keys, *, frame_idx, model_id):
+                called_models.append(model_id)
+                det = Detection(
+                    concept="bear",
+                    frame_idx=frame_idx,
+                    confidence=0.97,
+                    distance_m=1.6,
+                    clock_direction=12,
+                    track_id="bear-0",
+                    bbox=[0.2, 0.25, 0.5, 0.55],
+                )
+                return [det], {"bear-0": "불곰 체형·얼굴 확인"}
+
+            scanner = server.LiveScanner(
+                client, budget, min_interval_s=0.0, vision_fn=fake_vision
+            )
+            res = scanner.scan(
+                JPEG_BYTES,
+                "image/jpeg",
+                ["bear", "snake"],
+                model="muse-spark-1.3",
+            )
+            self.assertEqual(res["model"], "muse-spark-1.3")
+            self.assertEqual(called_models, ["muse-spark-1.3"])
+            self.assertEqual(budget.used_today(), 1)
+            self.assertEqual(len(res["detections"]), 1)
+            self.assertEqual(res["detections"][0]["concept"], "bear")
+            self.assertEqual(res["detections"][0]["verify_ko"], "불곰 체형·얼굴 확인")
+            self.assertIsNotNone(res["alert"])
+            self.assertEqual(res["alert"]["text_ko"], "전방 2미터, 곰")
+
 
 class DataUrlTests(unittest.TestCase):
     def test_roundtrip(self):
