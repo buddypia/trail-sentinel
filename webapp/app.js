@@ -81,12 +81,12 @@ async function scan(reset) {
   scanning = true;
   try {
     let body;
-    if (mode === "live") {
+    if (mode === "live" && serverMode === "live") {
       const image = captureFrame();
       if (!image) { registerFailure("카메라 영상이 아직 준비되지 않음"); return; }
       body = { image, concepts: [...selectedConcepts], mode };
     } else {
-      body = { frame_index: frame, mode, reset: !!reset };
+      body = { frame_index: frame, mode: "demo", reset: !!reset };
     }
     const ctl = new AbortController();
     const killer = setTimeout(() => ctl.abort(), SCAN_TIMEOUT_MS);
@@ -170,25 +170,41 @@ function fireAlert(alert) {
   if (navigator.vibrate) navigator.vibrate(alert.level === "danger" ? [250, 100, 250] : [150]);
 }
 
+function unlockSpeech() {
+  try {
+    if (!window.speechSynthesis) return;
+    const warm = new SpeechSynthesisUtterance("");
+    warm.volume = 0;
+    warm.lang = "ko-KR";
+    speechSynthesis.speak(warm);
+  } catch {}
+}
+
 function startLoop(m) {
   mode = m; frame = 0; lastSpoken = "";
   banner.hidden = true; msg.hidden = true;
   registerSuccess();
   $("btnLive").disabled = $("btnDemo").disabled = true;
   $("btnStop").disabled = false;
+  const isRealLive = mode === "live" && serverMode === "live";
   scan(true);
   timer = setInterval(() => {
-    if (mode === "live") { scan(false); return; }
+    if (isRealLive) { scan(false); return; }
     frame += FRAME_STEP;
-    if (frame > LAST_FRAME) { stopAll("데모 장면이 끝났습니다."); return; }
+    if (frame > LAST_FRAME) {
+      if (mode === "live") { frame = 0; lastSpoken = ""; scan(true); return; }
+      stopAll("데모 장면이 끝났습니다.");
+      return;
+    }
     scan(false);
-  }, mode === "live" ? LIVE_MS : SCAN_MS);
+  }, isRealLive ? LIVE_MS : SCAN_MS);
 }
 
 function stopAll(note) {
   clearInterval(timer); timer = null;
   if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
   video.srcObject = null;
+  $("stage").classList.remove("demo-bg");
   $("demoBadge").hidden = true;
   $("btnLive").disabled = $("btnDemo").disabled = false;
   $("btnStop").disabled = true;
@@ -198,13 +214,24 @@ function stopAll(note) {
   if (note) { msg.hidden = false; msg.textContent = note; }
 }
 
-$("btnDemo").onclick = () => { $("demoBadge").hidden = false; startLoop("demo"); };
+$("btnDemo").onclick = () => {
+  unlockSpeech();
+  $("stage").classList.add("demo-bg");
+  $("demoBadge").textContent = "데모 장면 재생 중 (카메라 아님)";
+  $("demoBadge").hidden = false;
+  startLoop("demo");
+};
 $("btnStop").onclick = () => stopAll("중지됨. 다시 시작할 수 있습니다.");
 $("btnLive").onclick = async () => {
+  unlockSpeech();
   try {
     stream = await navigator.mediaDevices.getUserMedia({
       video: { facingMode: "environment" }, audio: false });
     video.srcObject = stream;
+    if (serverMode !== "live") {
+      $("demoBadge").textContent = "스텁 시뮬레이션 중 (카메라 프리뷰 + 데모 판정)";
+      $("demoBadge").hidden = false;
+    }
     startLoop("live");
   } catch {
     msg.hidden = false;

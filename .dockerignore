@@ -1,0 +1,7 @@
+.git
+__pycache__
+*.pyc
+.call_counter.json
+deploy/logs
+eval/data/*
+!eval/data/hero_snake_leaves_01.jpg

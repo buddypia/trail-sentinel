@@ -46,6 +46,7 @@ import importlib.util
 import json
 import math
 import os
+import re
 import struct
 import subprocess
 import sys
@@ -152,16 +153,89 @@ def ground_plane_distance_estimator(
     return round(distance, 2)
 
 
+_SAM_RECORD_RE = re.compile(
+    r"<(\d+)f>([^<]+)<\|box;([^|]+)\|>(?:<\|mask;([^|]+)\|>)?",
+)
+
+
+class _BuiltinHelperParser:
+    """Built-in pure-text fallback when the external helper script is absent."""
+
+    @staticmethod
+    def extract_output_text(raw: str) -> str:
+        deltas: list[str] = []
+        for line in raw.splitlines():
+            line = line.strip()
+            if not line.startswith("data:"):
+                continue
+            payload_str = line[5:].strip()
+            if not payload_str or payload_str == "[DONE]":
+                continue
+            try:
+                event = json.loads(payload_str)
+            except json.JSONDecodeError:
+                continue
+            etype = event.get("type")
+            if etype == "response.output_text.done" and isinstance(event.get("text"), str):
+                return event["text"]
+            if etype == "response.output_text.delta" and isinstance(event.get("delta"), str):
+                deltas.append(event["delta"])
+            if etype == "response.completed":
+                for item in (event.get("response") or {}).get("output") or []:
+                    for part in item.get("content") or []:
+                        if isinstance(part.get("text"), str) and part["text"]:
+                            return part["text"]
+        if deltas:
+            return "".join(deltas)
+        return raw
+
+    @staticmethod
+    def parse_sam_output(output_text: str) -> list[dict[str, Any]]:
+        records: list[dict[str, Any]] = []
+        for match in _SAM_RECORD_RE.finditer(output_text):
+            frame_str, object_id, box_body, mask_body = match.groups()
+            box_kv: dict[str, float] = {}
+            for pair in box_body.split(";"):
+                if "=" in pair:
+                    k, v = pair.split("=", 1)
+                    box_kv[k.strip()] = float(v.strip())
+            mask_data = ""
+            if mask_body:
+                for pair in mask_body.split(";"):
+                    if pair.startswith("data="):
+                        mask_data = pair[5:]
+                        break
+            records.append(
+                {
+                    "frame": int(frame_str),
+                    "object_id": object_id.strip(),
+                    "x1": box_kv["x1"],
+                    "y1": box_kv["y1"],
+                    "x2": box_kv["x2"],
+                    "y2": box_kv["y2"],
+                    "w": box_kv.get("w"),
+                    "h": box_kv.get("h"),
+                    "mask_present": bool(mask_body),
+                    "mask_data_len": len(mask_data),
+                }
+            )
+        return records
+
+
 def load_helper_parser() -> Any:
     """Import the connector helper module to reuse its SAM output parser.
 
     Importing the helper does not touch the credential: authd is only
     contacted when the helper builds a request, and the parser functions
     (``extract_output_text`` / ``parse_sam_output``) are pure text work.
-    Raises :class:`HelperNotConfiguredError` if no helper is present.
+    Falls back to the built-in pure-text parser when the external helper
+    script is not installed on the current machine.
     """
 
-    helper = require_helper(resolve_helper_path())
+    candidate = resolve_helper_path()
+    if not candidate.is_file():
+        return _BuiltinHelperParser
+    helper = require_helper(candidate)
     spec = importlib.util.spec_from_file_location(
         "meta_model_api_helper", helper
     )

@@ -331,6 +331,17 @@ class Handler(SimpleHTTPRequestHandler):
     def do_GET(self):
         if self.path == "/api/status":
             self._json(status())
+        elif self.path == "/hero_snake_leaves_01.jpg":
+            hero_img = ROOT / "eval" / "data" / "hero_snake_leaves_01.jpg"
+            if hero_img.is_file():
+                data = hero_img.read_bytes()
+                self.send_response(200)
+                self.send_header("Content-Type", "image/jpeg")
+                self.send_header("Content-Length", str(len(data)))
+                self.end_headers()
+                self.wfile.write(data)
+            else:
+                self.send_error(404)
         else:
             super().do_GET()
 
