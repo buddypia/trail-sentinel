@@ -1243,9 +1243,11 @@ if ($("btnCopyUrl")) {
 
 if (langSelect) {
   langSelect.value = currentLang;
-  langSelect.onchange = () => {
+  const onLangChange = () => {
     applyLanguage(langSelect.value, { userInitiated: true });
   };
+  langSelect.addEventListener("change", onLangChange);
+  langSelect.addEventListener("input", onLangChange);
 }
 
 if (modelSelect) {

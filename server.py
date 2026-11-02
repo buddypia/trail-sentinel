@@ -460,6 +460,10 @@ class Handler(SimpleHTTPRequestHandler):
     def log_message(self, *args):  # keep the console quiet
         pass
 
+    def end_headers(self) -> None:
+        self.send_header("Cache-Control", "no-cache, must-revalidate")
+        super().end_headers()
+
     def _json(self, payload: dict, code: int = 200) -> None:
         body = json.dumps(payload, ensure_ascii=False).encode()
         self.send_response(code)
