@@ -42,10 +42,40 @@ def score(det: Detection, speed_mps: float) -> float:
     return hazard.severity * 2.0 * proximity + min(speed_mps, 2.0) + confidence
 
 
-def phrase_for(det: Detection) -> str:
-    """Short spoken warning: direction + distance + hazard. e.g. '발 앞 2미터, 뱀'."""
+def phrase_for(det: Detection, lang: str = "ko") -> str:
+    """Short spoken warning: direction + distance + hazard in en / ja / ko."""
     hazard = HAZARD_BY_KEY[det.concept]
     dist = max(1, round(det.distance_m))
+    code = (lang or "ko").lower()[:2]
+    if code == "en":
+        if hazard.zone == "feet":
+            where = (
+                "Underfoot ahead"
+                if det.clock_direction == 12
+                else f"{det.clock_direction} o'clock underfoot"
+            )
+        else:
+            where = (
+                "Ahead"
+                if det.clock_direction == 12
+                else f"{det.clock_direction} o'clock"
+            )
+        unit = "meter" if dist == 1 else "meters"
+        return f"{where}, {dist} {unit}, {hazard.label_for('en')}"
+    if code == "ja":
+        if hazard.zone == "feet":
+            where = (
+                "足元前方"
+                if det.clock_direction == 12
+                else f"{det.clock_direction}時方向の足元"
+            )
+        else:
+            where = (
+                "前方"
+                if det.clock_direction == 12
+                else f"{det.clock_direction}時方向"
+            )
+        return f"{where} {dist}メートル、{hazard.label_for('ja')}"
     if hazard.zone == "feet":
         where = "발 앞" if det.clock_direction == 12 else f"{det.clock_direction}시 방향 발 앞"
     else:

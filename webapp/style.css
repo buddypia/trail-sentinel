@@ -159,6 +159,11 @@ html, body {
   gap: 6px;
 }
 
+.lang-icon {
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
 .model-select-prefix {
   font-size: var(--fs-small);
   color: var(--muted);
@@ -1034,7 +1039,10 @@ html, body {
     display: none;
   }
   .model-select {
-    max-width: 150px;
+    max-width: 140px;
+  }
+  .lang-select-wrap .model-select {
+    max-width: 112px;
   }
   .kpi-strip {
     grid-template-columns: repeat(2, minmax(0, 1fr));

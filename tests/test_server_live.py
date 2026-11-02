@@ -167,8 +167,13 @@ class LiveScannerTests(unittest.TestCase):
             self.assertEqual(budget.used_today(), 1)
             self.assertEqual(len(res["detections"]), 1)
             self.assertEqual(res["detections"][0]["concept"], "bear")
+            self.assertEqual(res["detections"][0]["label_en"], "Bear")
+            self.assertEqual(res["detections"][0]["label_ja"], "クマ")
+            self.assertEqual(res["detections"][0]["label_ko"], "곰")
             self.assertEqual(res["detections"][0]["verify_ko"], "불곰 체형·얼굴 확인")
             self.assertIsNotNone(res["alert"])
+            self.assertEqual(res["alert"]["text_en"], "Ahead, 2 meters, Bear")
+            self.assertEqual(res["alert"]["text_ja"], "前方 2メートル、クマ")
             self.assertEqual(res["alert"]["text_ko"], "전방 2미터, 곰")
 
 

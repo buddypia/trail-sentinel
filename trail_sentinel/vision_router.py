@@ -81,38 +81,68 @@ def get_gcp_project_id() -> str:
 AVAILABLE_MODELS: tuple[dict[str, Any], ...] = (
     {
         "id": "sam-3.1-hybrid",
-        "label": "SAM 3.1 + Muse Spark 1.3 하이브리드 (추천 · 분할+의미검증)",
+        "label": "SAM 3.1 + Muse Spark 1.3 Hybrid (Recommended · Seg + Verify)",
+        "label_en": "SAM 3.1 + Muse Spark 1.3 (Seg + Verify)",
+        "label_ja": "SAM 3.1 + Muse Spark 1.3 (領域分割+意味検証)",
+        "label_ko": "SAM 3.1 + Muse Spark 1.3 (분할+의미검증)",
         "short_label": "SAM 3.1 + Muse Spark",
         "mode_type": "hybrid_segmentation_verify",
-        "description": "Meta SAM 3.1 영역 분할(Box+Mask)과 Muse Spark 1.3 의미 검증(곰·뱀 진위 판별)을 동시 수행",
+        "description": "Combines Meta SAM 3.1 pixel segmentation (Box+Mask) with Muse Spark 1.3 semantic hazard verification in a single pass.",
+        "description_en": "Combines Meta SAM 3.1 pixel segmentation (Box+Mask) with Muse Spark 1.3 semantic hazard verification in a single pass.",
+        "description_ja": "Meta SAM 3.1の領域分割(Box+Mask)とMuse Spark 1.3の意味検証(クマ・ヘビの真偽判別)を1パスで同時実行します。",
+        "description_ko": "Meta SAM 3.1 영역 분할(Box+Mask)과 Muse Spark 1.3 의미 검증(곰·뱀 진위 판별)을 동시 수행합니다.",
     },
     {
         "id": "muse-spark-1.3",
-        "label": "Meta Muse Spark 1.3 (초고속 멀티모달 · ~1.1s)",
+        "label": "Meta Muse Spark 1.3 (Fast Multimodal · ~1.1s)",
+        "label_en": "Meta Muse Spark 1.3 (Fast Multimodal ~1.1s)",
+        "label_ja": "Meta Muse Spark 1.3 (超高速マルチモーダル ~1.1s)",
+        "label_ko": "Meta Muse Spark 1.3 (초고속 ~1.1s)",
         "short_label": "Muse Spark 1.3",
         "mode_type": "muse_fast",
-        "description": "고속 네이티브 멀티모달 시각 추론으로 카메라·유튜브 영상을 빠르게 실시간 판정",
+        "description": "High-speed native multimodal visual reasoning for rapid real-time camera and video hazard detection.",
+        "description_en": "High-speed native multimodal visual reasoning for rapid real-time camera and video hazard detection.",
+        "description_ja": "高速ネイティブマルチモーダル視覚推論により、カメラや動画の危険要素をリアルタイム判定します。",
+        "description_ko": "고속 네이티브 멀티모달 시각 추론으로 카메라·유튜브 영상을 빠르게 실시간 판정합니다.",
     },
     {
         "id": "muse-wonder-1.0",
-        "label": "Meta Muse Wonder 1.0 (프론티어 정밀 시각 검증)",
+        "label": "Meta Muse Wonder 1.0 (Precision Visual Verification)",
+        "label_en": "Meta Muse Wonder 1.0 (Precision Visual Verify)",
+        "label_ja": "Meta Muse Wonder 1.0 (高精度視覚検証)",
+        "label_ko": "Meta Muse Wonder 1.0 (정밀 시각검증)",
         "short_label": "Muse Wonder 1.0",
         "mode_type": "muse_wonder",
-        "description": "위장된 뱀·수풀 속 곰 등 보호색 객체의 형태와 위험도를 정밀 검증",
+        "description": "Frontier multimodal verification for camouflaged snakes, bears in brush, and complex trail terrain.",
+        "description_en": "Frontier multimodal verification for camouflaged snakes, bears in brush, and complex trail terrain.",
+        "description_ja": "落ち葉に擬態したヘビや茂みの中のクマなど、保護色オブジェクトの形状と危険度を精密検証します。",
+        "description_ko": "위장된 뱀·수풀 속 곰 등 보호색 객체의 형태와 위험도를 정밀 검증합니다.",
     },
     {
         "id": "muse-glimmer",
-        "label": "Meta Muse Glimmer 30B (경량 엣지 고속 반응)",
+        "label": "Meta Muse Glimmer 30B (Lightweight Edge Inference)",
+        "label_en": "Meta Muse Glimmer 30B (Lightweight Edge)",
+        "label_ja": "Meta Muse Glimmer 30B (軽量エッジ推論)",
+        "label_ko": "Meta Muse Glimmer 30B (경량 엣지 추론)",
         "short_label": "Muse Glimmer 30B",
         "mode_type": "muse_glimmer",
-        "description": "30B 오픈웨이트 아키텍처 기반 최소 지연 경량 멀티모달 판정",
+        "description": "Low-latency lightweight multimodal hazard detection built on the 30B open-weight architecture.",
+        "description_en": "Low-latency lightweight multimodal hazard detection built on the 30B open-weight architecture.",
+        "description_ja": "30Bオープンウェイト構造に基づく低遅延・軽量マルチモーダル判定モードです。",
+        "description_ko": "30B 오픈웨이트 아키텍처 기반 최소 지연 경량 멀티모달 판정 모드입니다.",
     },
     {
         "id": "sam-3.1",
-        "label": "Meta SAM 3.1 (순수 프롬프트 픽셀 분할)",
+        "label": "Meta SAM 3.1 (Pure Promptable Pixel Segmentation)",
+        "label_en": "Meta SAM 3.1 (Pure Pixel Segmentation)",
+        "label_ja": "Meta SAM 3.1 (純粋ピクセル分割)",
+        "label_ko": "Meta SAM 3.1 (순수 픽셀분할)",
         "short_label": "Meta SAM 3.1",
         "mode_type": "pure_sam",
-        "description": "텍스트 프롬프트와 형태가 일치하는 영역의 픽셀 마스크만 분할 (의미 분류 미포함)",
+        "description": "Segments pixel masks matching the text prompt geometry without semantic classification.",
+        "description_en": "Segments pixel masks matching the text prompt geometry without semantic classification.",
+        "description_ja": "テキストプロンプトと形状が一致する領域のピクセルマスクのみを分割します（意味分類なし）。",
+        "description_ko": "텍스트 프롬프트와 형태가 일치하는 영역의 픽셀 마스크만 분할합니다 (의미 분류 미포함).",
     },
 )
 
@@ -247,6 +277,7 @@ def scan_with_vertex_vision(
     *,
     frame_idx: int,
     model_id: str = DEFAULT_MODEL_ID,
+    lang: str = "en",
 ) -> tuple[list[Detection], dict[str, str]]:
     """Run 1-pass multi-concept detection, segmentation & semantic verification."""
     bridge_model, thinking_level = _BRIDGE_CONFIG.get(
@@ -258,8 +289,19 @@ def scan_with_vertex_vision(
         active_hazards = list(HAZARDS)
 
     concept_spec = ", ".join(
-        f"{h.key}({h.name_ko}: {h.prompt})" for h in active_hazards
+        f"{h.key}({h.prompt})" for h in active_hazards
     )
+    lang_code = (lang or "en").lower()[:2]
+    if lang_code == "ja":
+        verify_rule = "verify_ko is <=16 Japanese chars (e.g. \"ヒグマの体格・顔を確認\")"
+        verify_example = "ヒグマの体格・顔を確認"
+    elif lang_code == "ko":
+        verify_rule = "verify_ko is <=16 Korean chars (e.g. \"불곰 체형·얼굴 확인\")"
+        verify_example = "불곰 체형·얼굴 확인"
+    else:
+        verify_rule = "verify_ko is <=24 English chars (e.g. \"Brown bear body & snout\")"
+        verify_example = "Brown bear body & snout"
+
     prompt_text = (
         "Detect trail hazards in this image (including hazards shown on a "
         "monitor, TV, or phone screen playing a YouTube video). "
@@ -268,8 +310,8 @@ def scan_with_vertex_vision(
         "or snake vs harmless rock/tree). "
         "Return JSON: {\"detections\":[{\"concept\":\"bear\",\"confidence\":0.97,"
         "\"distance_m\":1.8,\"box_2d\":[ymin,xmin,ymax,xmax],"
-        "\"verify_ko\":\"불곰 체형·얼굴 확인\"}]} "
-        "where box_2d is in 0..1000 and verify_ko is <=16 Korean chars."
+        f"\"verify_ko\":\"{verify_example}\"}}]}} "
+        f"where box_2d is in 0..1000 and {verify_rule}."
     )
 
     b64_img = base64.b64encode(image_bytes).decode("ascii")

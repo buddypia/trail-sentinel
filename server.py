@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import base64
 import binascii
+import inspect
 import json
 import os
 import threading
@@ -49,7 +50,7 @@ from trail_sentinel.sam_client import (
     SegmentRequest,
     StubSAMClient,
 )
-from trail_sentinel.triage import COOLDOWN_FRAMES, evaluate
+from trail_sentinel.triage import COOLDOWN_FRAMES, evaluate, phrase_for
 from trail_sentinel.vision_router import (
     AVAILABLE_MODELS,
     DEFAULT_MODEL_ID,
@@ -89,18 +90,24 @@ _prev_by_track: dict[str, Detection] = {}
 _last_alert_frame: dict[str, int] = {}
 
 
-def _label(concept: str) -> str:
-    return next(h.name_ko for h in HAZARDS if h.key == concept)
+def _label(concept: str, lang: str = "ko") -> str:
+    h = next(h for h in HAZARDS if h.key == concept)
+    return h.label_for(lang)
 
 
 def _severity(concept: str) -> int:
     return next(h.severity for h in HAZARDS if h.key == concept)
 
 
-def _detection_payload(d: Detection, verify_ko: str | None = None) -> dict:
+def _detection_payload(
+    d: Detection, verify_ko: str | None = None, lang: str = "en"
+) -> dict:
     payload = {
         "concept": d.concept,
-        "label_ko": _label(d.concept),
+        "label": _label(d.concept, lang),
+        "label_en": _label(d.concept, "en"),
+        "label_ja": _label(d.concept, "ja"),
+        "label_ko": _label(d.concept, "ko"),
         "distance_m": d.distance_m,
         "clock_direction": d.clock_direction,
         "bbox_norm": d.bbox,
@@ -109,15 +116,19 @@ def _detection_payload(d: Detection, verify_ko: str | None = None) -> dict:
     }
     if verify_ko:
         payload["verify_ko"] = verify_ko
+        payload["verify"] = verify_ko
     if d.mask_png and d.mask_rect:
         payload["mask_png"] = d.mask_png
         payload["mask_rect"] = d.mask_rect
     return payload
 
 
-def _alert_payload(decision) -> dict:
+def _alert_payload(decision, lang: str = "en") -> dict:
     sev = _severity(decision.detection.concept)
     return {
+        "text": phrase_for(decision.detection, lang),
+        "text_en": phrase_for(decision.detection, "en"),
+        "text_ja": phrase_for(decision.detection, "ja"),
         "text_ko": decision.phrase,
         "level": "danger" if sev == 3 else "caution",
         "concept": decision.detection.concept,
@@ -125,7 +136,9 @@ def _alert_payload(decision) -> dict:
     }
 
 
-def scan_frame(scene: str, frame_idx: int, reset: bool = False) -> dict:
+def scan_frame(
+    scene: str, frame_idx: int, reset: bool = False, lang: str = "en"
+) -> dict:
     """One frame through stub SAM -> triage. Adapter over the package logic."""
     with _lock:
         if reset:
@@ -147,11 +160,11 @@ def scan_frame(scene: str, frame_idx: int, reset: bool = False) -> dict:
             track = decision.detection.track_id
             if frame_idx - _last_alert_frame.get(track, -10**9) >= COOLDOWN_FRAMES:
                 _last_alert_frame[track] = frame_idx
-                alert = _alert_payload(decision)
+                alert = _alert_payload(decision, lang=lang)
 
         return {
             "frame_index": frame_idx,
-            "detections": [_detection_payload(d) for d in detections],
+            "detections": [_detection_payload(d, lang=lang) for d in detections],
             "alert": alert,
             "calls_today": _budget.used_today(),
             "cap": _budget.daily_cap,
@@ -216,11 +229,14 @@ class LiveScanner:
         self._seq = 0
 
     def scan(self, image_bytes: bytes, media_type: str, concepts, *,
-             model: str | None = None) -> dict:
+             model: str | None = None, lang: str = "en") -> dict:
         keys = filter_concepts(concepts)
         chosen_model = (
             model if model in MODEL_BY_ID else _active_model_id
         )
+        chosen_lang = (lang or "en").lower()[:2]
+        if chosen_lang not in ("en", "ja", "ko"):
+            chosen_lang = "en"
         base = {"mode": "live", "model": chosen_model,
                 "calls_today": self._budget.used_today(),
                 "cap": self._budget.daily_cap}
@@ -267,12 +283,15 @@ class LiveScanner:
         if use_single_pass_vision:
             try:
                 self._budget.spend(1)
+                sig = inspect.signature(self._vision_fn)
+                kwargs = {"frame_idx": seq, "model_id": chosen_model}
+                if "lang" in sig.parameters:
+                    kwargs["lang"] = chosen_lang
                 detections, verify_notes = self._vision_fn(
                     image_bytes,
                     media_type,
                     keys,
-                    frame_idx=seq,
-                    model_id=chosen_model,
+                    **kwargs,
                 )
             except BudgetExceeded:
                 budget_hit = True
@@ -338,12 +357,14 @@ class LiveScanner:
                 last = self._last_alert_at.get(track)
                 if last is None or started - last >= LIVE_ALERT_COOLDOWN_S:
                     self._last_alert_at[track] = started
-                    alert = _alert_payload(decision)
+                    alert = _alert_payload(decision, lang=chosen_lang)
 
         result = {
             **base,
             "detections": [
-                _detection_payload(d, verify_notes.get(d.track_id))
+                _detection_payload(
+                    d, verify_notes.get(d.track_id), lang=chosen_lang
+                )
                 for d in detections
             ],
             "alert": alert,
@@ -377,10 +398,14 @@ def status() -> dict:
         "calls_today": _budget.used_today(),
         "daily_cap": _budget.daily_cap,
         "default_model": _active_model_id,
+        "default_lang": "en",
         "models": list(AVAILABLE_MODELS),
         "hazards": [
             {
                 "key": h.key,
+                "label": h.label_for("en"),
+                "label_en": h.label_for("en"),
+                "label_ja": h.label_for("ja"),
                 "label_ko": h.name_ko,
                 "prompt": h.prompt,
                 "zone": h.zone,
@@ -394,18 +419,31 @@ def status() -> dict:
 def add_concept(body: dict) -> tuple[dict, int]:
     """Register a custom hazard concept at runtime without retraining (PRD F7)."""
     try:
+        raw_name = str(
+            body.get("name_ko")
+            or body.get("label_ko")
+            or body.get("name")
+            or body.get("name_en")
+            or body.get("name_ja")
+            or ""
+        )
         hazard = register_custom_hazard(
-            name_ko=str(body.get("name_ko") or body.get("label_ko") or ""),
+            name_ko=raw_name,
             prompt=body.get("prompt"),
             key=body.get("key"),
             zone=str(body.get("zone") or "front"),
             severity=int(body.get("severity") or 2),
+            name_en=body.get("name_en") or raw_name,
+            name_ja=body.get("name_ja") or raw_name,
         )
     except (ValueError, TypeError) as exc:
         return {"error": "bad_concept", "detail": str(exc)}, 400
     return {
         "added": {
             "key": hazard.key,
+            "label": hazard.label_for("en"),
+            "label_en": hazard.label_for("en"),
+            "label_ja": hazard.label_for("ja"),
             "label_ko": hazard.name_ko,
             "prompt": hazard.prompt,
             "zone": hazard.zone,
@@ -474,7 +512,12 @@ class Handler(SimpleHTTPRequestHandler):
         if scene not in _sam.scenes():
             self._json({"error": f"unknown_scene: {scene}"}, 400)
             return
-        result = scan_frame(scene, int(frame_idx), reset=bool(body.get("reset")))
+        result = scan_frame(
+            scene,
+            int(frame_idx),
+            reset=bool(body.get("reset")),
+            lang=str(body.get("lang") or "en"),
+        )
         self._json(result, 429 if "error" in result else 200)
 
     def _scan_live(self, body: dict) -> None:
@@ -498,6 +541,7 @@ class Handler(SimpleHTTPRequestHandler):
             media_type,
             body.get("concepts"),
             model=body.get("model"),
+            lang=str(body.get("lang") or "en"),
         )
         code = 200
         if result.get("error") in ("daily_call_cap_reached", "scan_too_soon"):

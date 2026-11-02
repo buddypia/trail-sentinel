@@ -23,14 +23,25 @@ class Hazard:
     prompt: str
     zone: str
     severity: int
+    name_en: str = ""
+    name_ja: str = ""
+
+    def label_for(self, lang: str = "en") -> str:
+        code = (lang or "en").lower()[:2]
+        if code == "ja":
+            return self.name_ja or self.name_en or self.name_ko
+        if code == "ko":
+            return self.name_ko or self.name_en or self.name_ja
+        return self.name_en or self.name_ko or self.name_ja
+
 
 DEFAULT_HAZARDS: tuple[Hazard, ...] = (
-    Hazard("snake", "뱀", "a snake camouflaged among fallen leaves and soil", "feet", 3),
-    Hazard("wasp_nest", "말벌집", "a wasp nest attached to a tree, rock or structure", "front", 3),
-    Hazard("bear", "곰", "a bear on or near the trail", "front", 3),
-    Hazard("boar", "멧돼지", "a wild boar on or near the trail", "front", 2),
-    Hazard("rockfall", "낙석 구간", "a pile of fallen rocks or a collapsed trail section", "front", 2),
-    Hazard("slippery", "미끄러운 구간", "a hidden hole, protruding root or wet slippery fallen leaves underfoot", "feet", 1),
+    Hazard("snake", "뱀", "a snake camouflaged among fallen leaves and soil", "feet", 3, "Snake", "ヘビ"),
+    Hazard("wasp_nest", "말벌집", "a wasp nest attached to a tree, rock or structure", "front", 3, "Wasp nest", "スズメバチの巣"),
+    Hazard("bear", "곰", "a bear on or near the trail", "front", 3, "Bear", "クマ"),
+    Hazard("boar", "멧돼지", "a wild boar on or near the trail", "front", 2, "Wild boar", "イノシシ"),
+    Hazard("rockfall", "낙석 구간", "a pile of fallen rocks or a collapsed trail section", "front", 2, "Rockfall zone", "落石区間"),
+    Hazard("slippery", "미끄러운 구간", "a hidden hole, protruding root or wet slippery fallen leaves underfoot", "feet", 1, "Slippery path", "滑りやすい路面"),
 )
 
 HAZARDS: list[Hazard] = list(DEFAULT_HAZARDS)
@@ -46,6 +57,18 @@ _KO_PROMPT_PRESETS: dict[str, str] = {
     "얼음": "black ice or frozen slippery patch on the trail",
     "개": "an unleashed dog on the trail",
     "사슴": "a deer or elk on the trail",
+    "倒木": "a fallen tree or log blocking the trail",
+    "自転車": "a bicycle or mountain bike approaching on the trail",
+    "崖": "a steep cliff edge or drop-off beside the trail",
+    "水たまり": "a deep water puddle or mud hole on the trail",
+    "凍結": "black ice or frozen slippery patch on the trail",
+    "犬": "an unleashed dog on the trail",
+    "シカ": "a deer or elk on the trail",
+    "fallen tree": "a fallen tree or log blocking the trail",
+    "bicycle": "a bicycle or mountain bike approaching on the trail",
+    "cliff": "a steep cliff edge or drop-off beside the trail",
+    "puddle": "a deep water puddle or mud hole on the trail",
+    "black ice": "black ice or frozen slippery patch on the trail",
 }
 
 
@@ -56,20 +79,29 @@ def register_custom_hazard(
     key: str | None = None,
     zone: str = "front",
     severity: int = 2,
+    name_en: str | None = None,
+    name_ja: str | None = None,
 ) -> Hazard:
     """Register a zero-retraining custom hazard concept at runtime (PRD F7)."""
-    clean_name = (name_ko or "").strip()
+    clean_name = (name_ko or name_en or name_ja or "").strip()
     if not clean_name:
         raise ValueError("name_ko is required")
     clean_prompt = (prompt or "").strip()
     if not clean_prompt:
-        clean_prompt = _KO_PROMPT_PRESETS.get(clean_name, clean_name)
+        clean_prompt = _KO_PROMPT_PRESETS.get(
+            clean_name, _KO_PROMPT_PRESETS.get(clean_name.lower(), clean_name)
+        )
     if zone not in ("feet", "front"):
         zone = "front"
     sev = max(1, min(3, int(severity)))
     with _hazard_lock:
         for existing in HAZARDS:
-            if existing.name_ko == clean_name or (key and existing.key == key):
+            if (
+                existing.name_ko == clean_name
+                or existing.name_en.lower() == clean_name.lower()
+                or existing.name_ja == clean_name
+                or (key and existing.key == key)
+            ):
                 return existing
         slug = re.sub(r"[^a-z0-9_]+", "_", (key or clean_prompt).lower()).strip("_")
         if not slug or slug in HAZARD_BY_KEY:
@@ -80,6 +112,8 @@ def register_custom_hazard(
             prompt=clean_prompt,
             zone=zone,
             severity=sev,
+            name_en=(name_en or clean_name).strip(),
+            name_ja=(name_ja or clean_name).strip(),
         )
         HAZARDS.append(hazard)
         HAZARD_BY_KEY[hazard.key] = hazard
