@@ -49,32 +49,42 @@ HAZARDS: list[Hazard] = list(DEFAULT_HAZARDS)
 HAZARD_BY_KEY: dict[str, Hazard] = {h.key: h for h in HAZARDS}
 _hazard_lock = threading.Lock()
 
+_CUSTOM_HAZARD_PRESETS: tuple[tuple[str, str, str, str], ...] = (
+    ("Fallen tree", "쓰러진 나무", "倒木", "a fallen tree or log blocking the trail"),
+    ("Electric scooter", "전동 킥보드", "電動キックボード", "an electric scooter on the trail"),
+    ("Bicycle", "자전거", "自転車", "a bicycle or mountain bike approaching on the trail"),
+    ("Cliff edge", "절벽", "崖", "a steep cliff edge or drop-off beside the trail"),
+    ("Water puddle", "웅덩이", "水たまり", "a deep water puddle or mud hole on the trail"),
+    ("Black ice", "얼음", "凍結", "black ice or frozen slippery patch on the trail"),
+    ("Unleashed dog", "개", "犬", "an unleashed dog on the trail"),
+    ("Deer", "사슴", "シカ", "a deer or elk on the trail"),
+)
+
 _KO_PROMPT_PRESETS: dict[str, str] = {
-    "쓰러진 나무": "a fallen tree or log blocking the trail",
-    "전동 킥보드": "an electric scooter on the trail",
-    "자전거": "a bicycle or mountain bike approaching on the trail",
-    "절벽": "a steep cliff edge or drop-off beside the trail",
-    "웅덩이": "a deep water puddle or mud hole on the trail",
-    "얼음": "black ice or frozen slippery patch on the trail",
-    "개": "an unleashed dog on the trail",
-    "사슴": "a deer or elk on the trail",
-    "倒木": "a fallen tree or log blocking the trail",
-    "自転車": "a bicycle or mountain bike approaching on the trail",
-    "崖": "a steep cliff edge or drop-off beside the trail",
-    "水たまり": "a deep water puddle or mud hole on the trail",
-    "凍結": "black ice or frozen slippery patch on the trail",
-    "犬": "an unleashed dog on the trail",
-    "シカ": "a deer or elk on the trail",
-    "fallen tree": "a fallen tree or log blocking the trail",
-    "bicycle": "a bicycle or mountain bike approaching on the trail",
+    alias: prompt
+    for en_lbl, ko_lbl, ja_lbl, prompt in _CUSTOM_HAZARD_PRESETS
+    for alias in (en_lbl, en_lbl.lower(), ko_lbl, ja_lbl)
+}
+_KO_PROMPT_PRESETS.update({
     "cliff": "a steep cliff edge or drop-off beside the trail",
     "puddle": "a deep water puddle or mud hole on the trail",
-    "black ice": "black ice or frozen slippery patch on the trail",
+    "dog": "an unleashed dog on the trail",
+})
+
+_PRESET_BY_ALIAS: dict[str, tuple[str, str, str, str]] = {
+    alias: (en_lbl, ko_lbl, ja_lbl, prompt)
+    for en_lbl, ko_lbl, ja_lbl, prompt in _CUSTOM_HAZARD_PRESETS
+    for alias in (en_lbl.lower(), ko_lbl, ja_lbl)
 }
+_PRESET_BY_ALIAS.update({
+    "cliff": ("Cliff edge", "절벽", "崖", "a steep cliff edge or drop-off beside the trail"),
+    "puddle": ("Water puddle", "웅덩이", "水たまり", "a deep water puddle or mud hole on the trail"),
+    "dog": ("Unleashed dog", "개", "犬", "an unleashed dog on the trail"),
+})
 
 
 def register_custom_hazard(
-    name_ko: str,
+    name_ko: str = "",
     prompt: str | None = None,
     *,
     key: str | None = None,
@@ -84,14 +94,28 @@ def register_custom_hazard(
     name_ja: str | None = None,
 ) -> Hazard:
     """Register a zero-retraining custom hazard concept at runtime (PRD F7)."""
-    clean_name = (name_ko or name_en or name_ja or "").strip()
+    clean_name = (name_en or name_ko or name_ja or "").strip()
     if not clean_name:
-        raise ValueError("name_ko is required")
+        raise ValueError("hazard name is required")
+    preset = _PRESET_BY_ALIAS.get(clean_name.lower()) or _PRESET_BY_ALIAS.get(clean_name)
     clean_prompt = (prompt or "").strip()
     if not clean_prompt:
-        clean_prompt = _KO_PROMPT_PRESETS.get(
-            clean_name, _KO_PROMPT_PRESETS.get(clean_name.lower(), clean_name)
-        )
+        if preset:
+            clean_prompt = preset[3]
+        else:
+            clean_prompt = _KO_PROMPT_PRESETS.get(
+                clean_name, _KO_PROMPT_PRESETS.get(clean_name.lower(), clean_name)
+            )
+    resolved_en = (name_en or "").strip() or (preset[0] if preset else clean_name)
+    resolved_ko = (name_ko or "").strip() or (preset[1] if preset else clean_name)
+    resolved_ja = (name_ja or "").strip() or (preset[2] if preset else clean_name)
+    if preset:
+        if resolved_en == clean_name and clean_name in (preset[1], preset[2]):
+            resolved_en = preset[0]
+        if resolved_ko == clean_name and clean_name.lower() in (preset[0].lower(), preset[2].lower()):
+            resolved_ko = preset[1]
+        if resolved_ja == clean_name and clean_name.lower() in (preset[0].lower(), preset[1].lower()):
+            resolved_ja = preset[2]
     if zone not in ("feet", "front"):
         zone = "front"
     sev = max(1, min(3, int(severity)))
@@ -109,12 +133,12 @@ def register_custom_hazard(
             slug = f"custom_{len(HAZARDS) + 1}"
         hazard = Hazard(
             key=slug,
-            name_ko=clean_name,
+            name_ko=resolved_ko,
             prompt=clean_prompt,
             zone=zone,
             severity=sev,
-            name_en=(name_en or clean_name).strip(),
-            name_ja=(name_ja or clean_name).strip(),
+            name_en=resolved_en,
+            name_ja=resolved_ja,
         )
         HAZARDS.append(hazard)
         HAZARD_BY_KEY[hazard.key] = hazard

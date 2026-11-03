@@ -1,119 +1,144 @@
 # Trail Sentinel
 
-**A real-time, proactive warning system for trail hazards.** Walk with your
-phone camera pointed at your feet and the path ahead: the app continuously
-scans each frame, segments hazards defined by plain-text prompts with
-Meta's SAM 3.1, tracks them across scans, ranks them by severity ×
-proximity × approach speed, and — only when one is actually dangerous —
-warns you with a short voice alert and vibration before you reach it.
-No extra hardware, no app install: it runs in the phone browser.
+**A real-time, proactive optical HUD and voice warning system for trail hazards.**
+Walk with your phone camera pointed at the path ahead—or run the built-in multi-hazard verification videos directly in your browser. Trail Sentinel continuously scans frames, segments prompt-defined hazards at the pixel level with **Meta SAM 3.1** and the **Meta Muse** multimodal family, tracks them across frames, ranks them by **severity × proximity × approach speed**, and—only when a hazard enters the danger radius—triggers an immediate directional voice alert and haptic vibration.
 
-> **Safety positioning:** Trail Sentinel is an **assistive tool, not a
-> safety guarantee** (보조 도구 — 안전 보장 안 함). It can miss hazards and
-> can raise false alarms. Always watch the trail yourself.
+No extra hardware and no native app installation required: it runs directly in any desktop or mobile browser.
 
-**Hero scenario:** autumn, peak leaf-fall. A mamushi (pit viper) lies
-camouflaged between layers of fallen leaves on the trail — the hiker's eye
-slides right over it. Trail Sentinel masks it on screen and warns:
-*"발 앞 3미터, 뱀"* ("3 metres ahead of your feet: a snake").
+> **Safety Positioning:** Trail Sentinel is an **assistive tool, not a safety guarantee**. False positives or missed detections can occur depending on lighting, camouflage, and network latency. Always watch the trail with your own eyes.
 
-Built for the **Meta Global AI Developer Hackathon** (Cerebral Valley) ·
-Indie track · Theme: **Push the Frontier**. All code in this repository was
-built during the hackathon event window, **October 26 – November 4, 2026**.
+---
 
-## Feature status (honest)
+## Hero Scenario
 
-| Capability | Status |
-| --- | --- |
-| Continuous scan loop, priority triage, voice + vibration alerts | ✅ Built (deterministic triage in `trail_sentinel/triage.py`) |
-| SAM 3.1 segmentation via Meta Model API | ✅ **Verified live on 2026-10-31** — `sam-3.1` confirmed in the models list; hero snake still segmented (1 box + mask, ~3.0 s, $0.0025 within the hackathon credit) |
-| Live camera frames → real SAM → overlay (F1) | ✅ Built — webapp sends real frames; server calls SAM per concept in parallel, decodes masks to PNG overlays; opt-in via `TRAIL_SENTINEL_LIVE=1` only |
-| End-to-end live latency | ⚠️ **Measured 6.1 s per scan** (1 concept) vs the PRD target of p50 ≤ 1.5 s — a known miss, recorded in `PRD.md` §9.2; the 3 s alert-validity discard is deliberately not enforced yet |
-| Distance to hazard | ⚠️ Estimate only — SAM returns no distance; a documented, uncalibrated ground-plane heuristic is used. SAM also returns no confidence score (shown as none, never invented) |
-| Voice-added custom hazards (F7), route memory (F10), reports (F11) | ❌ Not built — hazard set is the fixed 6 concepts in `trail_sentinel/config.py` |
-| Deployment | ⚠️ Server runs on the dev machine; `deploy/start_demo.sh` serves it behind a Cloudflare quick tunnel where network policy allows (see `DEPLOY.md`) |
+Autumn, peak leaf-fall. A venomous pit viper lies camouflaged among layers of fallen leaves on the trail—easy for a hiker's eye to miss. Trail Sentinel segments the snake's contour on the optical HUD, highlights its bounding box and bearing, and speaks a concise directional warning before you step within strike range:
 
-## Quickstart — demo mode (no API key, no network)
+> *"Underfoot ahead, 3 meters, Snake"*
+
+Built for the **Meta Global AI Developer Hackathon** (Cerebral Valley) · **Indie Track** · Theme: **Push the Frontier** (October 26 – November 5, 2026).
+
+---
+
+## Key Capabilities (`F1`–`F12`)
+
+| ID | Capability | Status | Implementation Highlights |
+| :---: | :--- | :---: | :--- |
+| **`F1`** | **Live Camera Scan** | ✅ Built | Captures live WebRTC camera frames (`webapp/app.js` → `POST /api/scan`) with rate-limiting and 10s timeout guardrails (`server.py`). |
+| **`F2`** | **Meta AI Multi-Model Switcher & SAM 3.1 Segmentation** | ✅ Built | Switch in real time between `SAM 3.1 + Muse Spark 1.3 (Hybrid Seg + Verify)`, `Meta Muse Spark 1.3`, `Meta Muse Wonder 1.0`, `Meta Muse Glimmer 30B`, and pure `Meta SAM 3.1` (`trail_sentinel/vision_router.py`, `sam_client.py`, `meta_transport.py`). |
+| **`F3`** | **Distance & Clock-Bearing Estimation + 4-KPI Strip** | ✅ Built | Ground-plane + bounding-box visual distance heuristic (`estimate_visual_distance_m`, `ground_plane_distance_estimator`) and clock-face bearing (`11` / `12` / `1 o'clock`). |
+| **`F4`** | **Priority Triage (Muse Wonder Role)** | ✅ Built | Deterministic severity × proximity + approach speed scoring (`trail_sentinel/triage.py`) with severity-gated alert radii (`3.0m` / `2.5m` / `1.0m`) and 3.0s per-track anti-chatter cooldown. |
+| **`F5`** | **Localized Voice Alerts (TTS), Haptics & Optical HUD** | ✅ Built | Pixel mask overlay + corner-bracket bounding boxes on HTML5 Canvas, Web Speech API (`speechSynthesis`) voice warnings, and mobile `navigator.vibrate` patterns. |
+| **`F6`** | **Hero Demo Replay & Honesty Badges** | ✅ Built | Replays recorded fixture frames `0..60` (`fixtures/hero_snake_leaves.json`) with explicit `#demoBadge` and `#unknownBadge` latency/failure indicators. |
+| **`F7`** | **Zero-Retraining Custom Hazard Concepts** | ✅ Built | Add new trail hazards on the fly via text or Web Speech API voice input (`POST /api/concepts` → `register_custom_hazard` in `trail_sentinel/config.py`). |
+| **`F8`** | **Daily Call Budget Guard (`CallBudget`)** | ✅ Built | Atomic JSON counter (`CallBudget`, default `DAILY_CALL_CAP=200` calls/day) prevents accidental API overspend before any provider request is sent. |
+| **`F9`** | **Evaluation Harness & Rights-Cleared Media** | ✅ Built | Reproducible scoring script (`eval/score.py`) measuring detection rate, warning lead time, and false-alarm rate; all media sources and open licenses documented in `eval/data/SOURCES.md`. |
+| **`F10`** | **Multi-Language i18n (`EN` / `KO` / `JA`)** | ✅ Built | **English (`en`) default** across backend, CLI, API, and UI; automatic Browser/OS locale detection (`en`, `ko`, `ja`); instant UI switcher (`#langSelect`) and localized TTS. |
+| **`F11`** | **Verification Video Scan & "How It Works" Showcase** | ✅ Built | Top-screen live HUD preview video (`hero_how_it_works.mp4`) plus 8-scene combined verification video scanner (`hazard_verification_combined*.mp4`) with `1.0x`, `0.5x`, `0.33x`, `0.25x`, and `0.2x` playback speeds. |
+| **`F12`** | **Instant Mobile QR Access & Cloud Run Deployment** | ✅ Built | In-app QR drawer and inline QR card dynamically bound to `window.location.origin` for instant smartphone testing, backed by a keyless `Dockerfile` for Cloud Run. |
+
+---
+
+## Multi-Language Support (`F10`: English Default + Browser/OS Auto-Detection)
+
+Trail Sentinel uses **English (`en`)** as its universal default across the backend, CLI, API responses, and documentation, while providing full first-class support for **English (`en`)**, **Korean (`ko`)**, and **Japanese (`ja`)**:
+
+1. **Default Language (`en`)**: All backend modules (`trail_sentinel/triage.py`, `trail_sentinel/config.py`, `server.py`, `main.py`) and static HTML (`webapp/index.html`) default to English.
+2. **Automatic Browser & OS Detection**: On initial load, the web app inspects:
+   - Explicit URL parameter (`?lang=en`, `?lang=ko`, `?lang=ja`)
+   - Saved user preference in `localStorage` (`trail_sentinel_lang`)
+   - Browser and OS locale settings (`navigator.languages`, `navigator.language`, and `Intl.DateTimeFormat().resolvedOptions().locale`)
+   - If the browser or OS locale matches English (`en`), Korean (`ko`), or Japanese (`ja`), that language is automatically selected; otherwise, it falls back to **English (`en`)**.
+3. **Interactive UI Switcher**: Users can switch languages at any time using the top HUD selector (`Lang`: `English (EN)` / `한국어 (KO)` / `日本語 (JA)`). Switching immediately updates all UI labels, concept filter chips, model descriptions, AI verification notes, and Web Speech API voice alerts (`en-US`, `ko-KR`, `ja-JP`).
+
+---
+
+## Quickstart
+
+### 1. Run the Web App (`http://localhost:8765`)
 
 ```bash
-cd trail-sentinel
-python3 main.py        # CLI: hero scene frames 0..60, one snake alert + cooldown
-python3 server.py      # web app on http://localhost:8765
+python3 server.py
 ```
 
-Open the URL in a browser and choose **데모 모드** (demo mode): it replays
-the recorded hero scene and shows the full scan → triage → alert flow,
-clearly badged as a replay. Or allow the camera and scan in stub mode —
-the status line always says which mode is active; stub results are never
-presented as live analysis.
+Open `http://localhost:8765` in your browser:
+- **Start Camera Scan**: Streams your device camera and segments hazards in real time.
+- **Scan Verification Video (Snake · Boar · Bear)**: Streams the built-in 8-scene wildlife verification video through the live AI pipeline (with selectable `0.2x` to `1.0x` speed and automatic frame freeze on detection).
+- **Play Hero Demo Scene (Frames 0..60)**: Replays the recorded camouflaged snake scenario with zero network or API calls.
 
-Run the tests (no network, no provider calls):
+### 2. Run the CLI Demo (No API Key, No Network)
 
 ```bash
-python3 -m unittest discover -s tests
+python3 main.py
+# Optional language flag (default: en):
+python3 main.py --lang en
+python3 main.py --lang ko
+python3 main.py --lang ja
 ```
 
-## Live mode (real SAM 3.1)
+### 3. Run Unit Tests & Evaluation Harness
 
-Live inference is **off by default** and deliberately hard to enable
-accidentally:
+```bash
+# Run all unit tests (no network or external API calls)
+python3 -m unittest discover -s tests -v
 
-1. The Meta Model API credential must live in the Secure Vault connection
-   of the companion connector (`custom.meta-model-api`). **No credential is
-   ever stored in this project** — the transport shells out to the
-   connector's helper script, which is the only component that talks to
-   the API.
-2. Point the transport at the helper (defaults to the dev-machine path):
-   `export TRAIL_SENTINEL_META_HELPER=/path/to/meta_model_api.py`
-   If the helper is missing, live mode fails with a clear
-   "not configured" error instead of half-working.
-3. Start the server with `TRAIL_SENTINEL_LIVE=1 python3 server.py`.
+# Run evaluation scoring harness
+python3 eval/score.py
+```
 
-**Cost guardrails.** Meta's Spend Limit is a notification, not a cap, so
-this project enforces its own: every concept call passes through
-`CallBudget` (daily cap 200 calls, JSON counter). At $0.0025 per image
-call, the worst case is **$0.50/day** — the cap, not the price, is the
-physical spend ceiling. Budget pre-flight refuses a scan before any spend
-if it would exceed the cap.
+---
+
+## Live Mode & Cost Guardrails
+
+1. **Zero Credentials in Code**: No API keys or secrets are stored in this repository. On the Meta Hackathon VM, `MetaSAMTransport` invokes the Secure Vault connector helper (`custom.meta-model-api`) via subprocess (`TRAIL_SENTINEL_META_HELPER`). On Cloud Run, `vision_router.py` uses keyless IAM Application Default Credentials.
+2. **Hard Daily Call Cap (`CallBudget`)**: Every scan passes through `CallBudget` (`.call_counter.json`, default `DAILY_CALL_CAP=200`). Pre-flight checks refuse any scan that would exceed the daily cap before making a provider call.
+
+---
 
 ## Architecture
 
+```text
+Browser HUD (webapp/index.html, app.js, style.css)
+  ├─ Input: Live Camera (getUserMedia) | Verification Video (0.2x..1.0x) | Hero Demo (Frames 0..60)
+  ├─ Locale: Auto-detects Browser/OS (en / ko / ja, default en) + Top-bar UI Switcher (#langSelect)
+  └─ Output: Canvas pixel mask + bracket bbox, 4-KPI telemetry strip, localized TTS & vibration
+        │
+        ▼  POST /api/scan  |  POST /api/concepts  |  GET /api/status
+Backend Server (server.py — Python stdlib only)
+  ├─ CallBudget (.call_counter.json, 200 calls/day cap)
+  ├─ LiveScanner (trail_sentinel/vision_router.py, sam_client.py, meta_transport.py)
+  │    ├─ Single-pass Hybrid Segmentation + Semantic Verification (SAM 3.1 + Muse Spark / Wonder / Glimmer)
+  │    └─ Pure SAM 3.1 per-concept connector subprocess (Meta Model API /v1/responses)
+  ├─ Distance & Bearing Estimator (ground_plane_distance_estimator / estimate_visual_distance_m)
+  └─ Priority Triage (trail_sentinel/triage.py: severity × proximity + approach speed, 3s cooldown)
+       └─ Emits localized alert payload:
+          • EN: "Underfoot ahead, 3 meters, Snake"
+          • KO: "발 앞 3미터, 뱀"
+          • JA: "足元前方 3メートル、ヘビ"
 ```
-phone browser (webapp/: getUserMedia camera, canvas overlay,
-               ko-KR TTS, vibration, demo replay mode)
-  → POST /api/scan  (frame image or demo frame index)
-server.py (Python stdlib only)
-  → StubSAMClient (demo/stub)  OR  LiveScanner (live, opt-in)
-      → RealSAMClient → MetaSAMTransport → connector helper subprocess
-        → Meta Model API, POST /v1/responses, model "sam-3.1"
-          (one short noun-phrase prompt per request, streamed
-           box + one-bit mask records; masks decoded with meta-sam-parser)
-  → triage.evaluate(): severity × proximity + approach speed,
-    cooldown, one top alert ("11시 방향 발 앞 3미터, 뱀")
-  → browser draws mask + box, red banner, speaks, vibrates
-```
 
-Hazard concepts v1 (frozen): snake, wasp nest, bear, boar, rockfall,
-underfoot bundle (roots / wet leaves / holes) — `trail_sentinel/config.py`.
-New hazards need **no retraining**: a concept is just a text prompt to
-SAM 3.1.
+### Baseline Hazard Concepts (`trail_sentinel/config.py`)
 
-## Evaluation data
+| Key | English (`en`) | Korean (`ko`) | Japanese (`ja`) | Zone | Severity | Default Prompt |
+| :--- | :--- | :--- | :--- | :---: | :---: | :--- |
+| `snake` | Snake | 뱀 | ヘビ | `feet` | `3` (Danger) | `a snake camouflaged among fallen leaves and soil` |
+| `wasp_nest` | Wasp nest | 말벌집 | スズメバチの巣 | `front` | `3` (Danger) | `a wasp nest attached to a tree, rock or structure` |
+| `bear` | Bear | 곰 | クマ | `front` | `3` (Danger) | `a bear on or near the trail` |
+| `boar` | Wild boar | 멧돼지 | イノシシ | `front` | `2` (Caution) | `a wild boar on or near the trail` |
+| `rockfall` | Rockfall zone | 낙석 구간 | 落石区間 | `front` | `2` (Caution) | `a pile of fallen rocks or a collapsed trail section` |
+| `slippery` | Slippery path | 미끄러운 구간 | 滑りやすい路面 | `feet` | `1` (Notice) | `a hidden hole, protruding root or wet slippery fallen leaves underfoot` |
 
-`eval/` contains the scoring harness (`score.py`: detection rate, warning
-lead time, false-alarm rate), the clip manifest
-(`eval/clips_manifest.json`), and still images. Per-file sources and
-licences are recorded in **`eval/data/SOURCES.md`** — only self-shot or
-verifiably licensed media is used. Video files are excluded from git by
-`.gitignore` (size); they are listed in the manifest with their licences.
+Additional custom concepts (e.g., *Fallen tree*, *Cliff edge*, *Bicycle*, *Black ice*) can be added at runtime without retraining via the **+ Add Concept** bar or `POST /api/concepts`.
 
-## Documents
+---
 
-- `PRD.md` — requirements, functions F1–F11, acceptance criteria, SLOs
-- `TECH.md` — technology choices and rationale
-- `AGENTS.md` — project entry point, current status, guardrails
-- `DEPLOY.md` — running the public demo, live-mode warnings
+## Documentation
+
+- [`FEATURE_MAP.md`](./FEATURE_MAP.md) — Full-stack feature map (`F1`–`F12`) and quick-lookup modification guide
+- [`PRD.md`](./PRD.md) — Product requirements, functional scope, acceptance criteria, and SLOs
+- [`TECH.md`](./TECH.md) — Architecture and technology decisions
+- [`DEPLOY.md`](./DEPLOY.md) — Local server, Cloud Run container, and tunnel deployment guide
+- [`eval/data/SOURCES.md`](./eval/data/SOURCES.md) — Per-file media sources and open-license attributions
 
 ## License
 
-MIT — see `LICENSE`.
+MIT — see [`LICENSE`](./LICENSE).

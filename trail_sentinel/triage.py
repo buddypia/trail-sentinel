@@ -43,26 +43,11 @@ def score(det: Detection, speed_mps: float) -> float:
     return hazard.severity * 2.0 * proximity + min(speed_mps, 2.0) + confidence
 
 
-def phrase_for(det: Detection, lang: str = "ko") -> str:
-    """Short spoken warning: direction + distance + hazard in en / ja / ko."""
+def phrase_for(det: Detection, lang: str = "en") -> str:
+    """Short spoken warning: direction + distance + hazard in en / ko / ja."""
     hazard = HAZARD_BY_KEY[det.concept]
     dist = max(1, round(det.distance_m))
-    code = (lang or "ko").lower()[:2]
-    if code == "en":
-        if hazard.zone == "feet":
-            where = (
-                "Underfoot ahead"
-                if det.clock_direction == 12
-                else f"{det.clock_direction} o'clock underfoot"
-            )
-        else:
-            where = (
-                "Ahead"
-                if det.clock_direction == 12
-                else f"{det.clock_direction} o'clock"
-            )
-        unit = "meter" if dist == 1 else "meters"
-        return f"{where}, {dist} {unit}, {hazard.label_for('en')}"
+    code = (lang or "en").lower()[:2]
     if code == "ja":
         if hazard.zone == "feet":
             where = (
@@ -77,16 +62,32 @@ def phrase_for(det: Detection, lang: str = "ko") -> str:
                 else f"{det.clock_direction}時方向"
             )
         return f"{where} {dist}メートル、{hazard.label_for('ja')}"
+    if code == "ko":
+        if hazard.zone == "feet":
+            where = "발 앞" if det.clock_direction == 12 else f"{det.clock_direction}시 방향 발 앞"
+        else:
+            where = "전방" if det.clock_direction == 12 else f"{det.clock_direction}시 방향"
+        return f"{where} {dist}미터, {hazard.label_for('ko')}"
     if hazard.zone == "feet":
-        where = "발 앞" if det.clock_direction == 12 else f"{det.clock_direction}시 방향 발 앞"
+        where = (
+            "Underfoot ahead"
+            if det.clock_direction == 12
+            else f"{det.clock_direction} o'clock underfoot"
+        )
     else:
-        where = "전방" if det.clock_direction == 12 else f"{det.clock_direction}시 방향"
-    return f"{where} {dist}미터, {hazard.name_ko}"
+        where = (
+            "Ahead"
+            if det.clock_direction == 12
+            else f"{det.clock_direction} o'clock"
+        )
+    unit = "meter" if dist == 1 else "meters"
+    return f"{where}, {dist} {unit}, {hazard.label_for('en')}"
 
 
 def evaluate(detections: list[Detection],
              prev_by_track: dict[str, Detection],
-             fps: float = 10.0) -> AlertDecision | None:
+             fps: float = 10.0,
+             lang: str = "en") -> AlertDecision | None:
     """Return an alert for the single highest-priority hazard, or None."""
     best: AlertDecision | None = None
     for det in detections:
@@ -94,5 +95,9 @@ def evaluate(detections: list[Detection],
             continue
         s = score(det, approach_speed_mps(prev_by_track.get(det.track_id), det, fps))
         if best is None or s > best.score:
-            best = AlertDecision(detection=det, score=round(s, 2), phrase=phrase_for(det))
+            best = AlertDecision(
+                detection=det,
+                score=round(s, 2),
+                phrase=phrase_for(det, lang=lang),
+            )
     return best

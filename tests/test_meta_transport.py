@@ -9,10 +9,13 @@ No network and no provider calls happen in these tests.
 from __future__ import annotations
 
 import os
+import sys
 import tempfile
 import unittest
 from pathlib import Path
 from unittest import mock
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from trail_sentinel.config import CallBudget
 from trail_sentinel.meta_transport import (

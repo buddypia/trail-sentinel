@@ -211,12 +211,28 @@ class CustomConceptTests(unittest.TestCase):
     def test_add_concept_registers_zero_retraining_hazard(self):
         payload, code = server.add_concept({"name_ko": "쓰러진 나무"})
         self.assertEqual(code, 200)
+        self.assertEqual(payload["added"]["label"], "Fallen tree")
+        self.assertEqual(payload["added"]["label_en"], "Fallen tree")
         self.assertEqual(payload["added"]["label_ko"], "쓰러진 나무")
+        self.assertEqual(payload["added"]["label_ja"], "倒木")
         self.assertEqual(
             payload["added"]["prompt"], "a fallen tree or log blocking the trail"
         )
         self.assertEqual(len(payload["hazards"]), 7)
         self.assertIn(payload["added"]["key"], server.filter_concepts(None))
+
+    def test_add_concept_from_english_populates_all_three_languages(self):
+        payload, code = server.add_concept({"name": "Fallen tree", "lang": "en"})
+        self.assertEqual(code, 200)
+        self.assertEqual(payload["added"]["label_en"], "Fallen tree")
+        self.assertEqual(payload["added"]["label_ko"], "쓰러진 나무")
+        self.assertEqual(payload["added"]["label_ja"], "倒木")
+
+    def test_default_language_is_english_with_ko_and_ja_supported(self):
+        st = server.status()
+        self.assertEqual(st["default_lang"], "en")
+        self.assertEqual(st["supported_langs"], ["en", "ko", "ja"])
+        self.assertEqual(st["hazards"][0]["label"], "Snake")
 
     def test_add_concept_rejects_empty_name(self):
         payload, code = server.add_concept({"name_ko": "   "})

@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import sys
 import tempfile
 import unittest
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from trail_sentinel.config import CallBudget
 from trail_sentinel.sam_client import (

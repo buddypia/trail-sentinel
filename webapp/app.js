@@ -61,39 +61,48 @@ const LAST_FRAME = 60;
 const SCAN_TIMEOUT_MS = 18000;
 const ALERT_VALIDITY_MS = 5000;
 
-// === [FEAT:F10] Multi-Language i18n Dictionary & Locale Detection (EN/JA/KO) =
-const SUPPORTED_LANGS = ["en", "ja", "ko"];
+// === [FEAT:F10] Multi-Language i18n Dictionary & Locale Detection (EN/KO/JA) =
+const SUPPORTED_LANGS = ["en", "ko", "ja"];
 const DEFAULT_LANG = "en";
 const LANG_STORAGE_KEY = "trail_sentinel_lang";
 const VOICE_LANG_MAP = {
   en: "en-US",
-  ja: "ja-JP",
   ko: "ko-KR",
+  ja: "ja-JP",
 };
 
 const I18N = {
   en: {
     page_title: "Trail Sentinel · Meta SAM 3.1 Real-Time Trail Hazard HUD",
     lang_prefix: "Lang",
+    lang_title: "Switch UI & Voice Language",
     model_prefix: "Model",
+    model_title: "Select real-time segmentation & verification model",
     voice_on: "Voice On",
     voice_off: "Voice Off",
+    voice_title: "Toggle voice alerts",
     qr_btn: "Mobile QR",
-    kpi_distance: "Nearest Hazard Distance",
+    qr_title: "Open mobile access QR code",
+    kpi_distance: "Top Threat Proximity",
     kpi_direction: "Hazard Bearing",
     kpi_latency: "Pipeline Latency",
     kpi_budget: "Daily Call Budget",
     demo_badge_replay: "Demo scene playing (not live camera)",
     demo_badge_stub: "Stub simulation (camera preview + demo detections)",
     unknown_badge_default: "Unverified · Scan delayed",
-    hero_scope: "Meta SAM 3.1 + Muse Wonder · Optical Segmentation & Range Triage",
+    hero_scope: "Meta SAM 3.1 + Muse Wonder · Optical Segmentation & Proximity Triage",
     hero_title: "Real-Time Trail Hazard Detection",
     hero_copy:
-      "Point your camera at a trail or test video to segment and track prompt-defined hazards at the pixel level, with instant voice and haptic warnings when entering hazard range.",
+      "Point your camera at a trail or test video to segment and track prompt-defined hazards at the pixel level, with instant voice and haptic warnings on direction and proximity.",
     showcase_badge: "▶ How It Works · Live HUD Preview (Snake · Boar · Bear)",
+    speed_02x: "0.2x (30s/scene)",
+    speed_025x: "0.25x (24s/scene)",
+    speed_033x: "0.33x (18s/scene)",
+    speed_05x: "0.5x (12s/scene)",
+    speed_10x: "1.0x (6s/scene)",
     btn_download_verify: "Download Verification Video",
     btn_start_hero: "Start Camera Scan",
-    btn_verify_video_hero: "Scan Verification Video (Snake · Boar)",
+    btn_verify_video_hero: "Scan Verification Video (Snake · Boar · Bear)",
     btn_demo_hero: "Play Hero Demo Scene (Frames 0..60)",
     demo_badge_verify_video: "Scanning verification video (Snake · Boar · Bear)",
     qr_inline_title: "Open Instantly on Smartphone",
@@ -102,6 +111,7 @@ const I18N = {
       "Scan with your phone's camera to launch immediately in your mobile browser.",
     chips_label: "Concept Filters",
     btn_add_concept: "+ Add Concept",
+    add_concept_title: "Add custom hazard concept without retraining (F7)",
     concept_name_placeholder: "New hazard name (e.g., Fallen tree)",
     concept_prompt_placeholder: "English prompt (optional: a fallen tree)",
     voice_unsupported_placeholder: "Voice input unsupported · Type hazard name",
@@ -137,7 +147,7 @@ const I18N = {
     log_card_title: "Live Detection Log",
     log_standby: "Standby",
     log_empty_standby:
-      "Start a live scan or demo to log segmented hazards, bearings, and distances per frame.",
+      "Start a live scan or demo to log segmented hazards, bearings, and proximity per frame.",
     log_empty_clear: "No hazards detected in the current frame.",
     status_checking: "Checking server connection...",
     status_live_prefix: "Live",
@@ -160,116 +170,37 @@ const I18N = {
     alert_prefix: "Hazard Alert",
     chip_toggle_hint: "Click to toggle filter",
   },
-  ja: {
-    page_title: "Trail Sentinel · Meta SAM 3.1 リアルタイム登山道危険検知 HUD",
-    lang_prefix: "言語",
-    model_prefix: "モデル",
-    voice_on: "音声 ON",
-    voice_off: "音声 OFF",
-    qr_btn: "スマホ QR",
-    kpi_distance: "最接近の危険距離",
-    kpi_direction: "危険方位（時計方向）",
-    kpi_latency: "パイプライン遅延",
-    kpi_budget: "本日のAPI呼び出し枠",
-    demo_badge_replay: "デモシーン再生中（実際のカメラではありません）",
-    demo_badge_stub: "スタブシミュレーション中（カメラプレビュー＋デモ判定）",
-    unknown_badge_default: "確認不可 · スキャン遅延",
-    hero_scope: "Meta SAM 3.1 + Muse Wonder · 光学セグメンテーション＆距離トリアージ",
-    hero_title: "前方トレイルの危険要素をリアルタイム計測",
-    hero_copy:
-      "カメラで登山道やテスト動画を映すと、テキストプロンプトで定義された危険要素をピクセル単位で分割・追跡し、危険半径に入った際に方向と距離を音声・振動で即座に警告します。",
-    showcase_badge: "▶ このように動きます · 検知プレビュー（落葉の蛇・山中の蛇・猪・熊）",
-    btn_download_verify: "検証動画をダウンロード",
-    btn_start_hero: "カメラスキャン開始",
-    btn_verify_video_hero: "検証動画でスキャン (蛇・猪・熊)",
-    btn_demo_hero: "ヒーローデモ再生 (フレーム 0..60)",
-    demo_badge_verify_video: "検証動画をスキャン中（落葉の蛇・山中の蛇・猪・熊）",
-    qr_inline_title: "スマホのカメラですぐ開く",
-    qr_expand_btn: "QRを拡大表示",
-    qr_inline_hint:
-      "スマートフォンの標準カメラでスキャンすると、モバイルブラウザで即座に起動します。",
-    chips_label: "分割コンセプトフィルター",
-    btn_add_concept: "+ コンセプト追加",
-    concept_name_placeholder: "新しい危険名 (例: 倒木)",
-    concept_prompt_placeholder: "英語プロンプト (任意: a fallen tree)",
-    voice_unsupported_placeholder: "音声認識非対応ブラウザ · テキストで入力してください",
-    btn_voice_input: "音声入力",
-    btn_voice_listening: "聞き取り中...",
-    btn_register_concept: "追加",
-    btn_live_start: "リアルタイムスキャン開始",
-    btn_live_stop: "スキャン停止",
-    btn_demo_start: "デモ再生",
-    btn_demo_stop: "デモ停止",
-    safety_line:
-      "補助ツールです · 安全を保証するものではなく、誤検知や見逃しが発生する場合があります。必ずご自身の目で周囲を確認してください。",
-    qr_card_title: "モバイルフィールドHUD即時接続",
-    btn_close: "閉じる",
-    qr_card_desc:
-      "スマートフォンのカメラで下のQRコードをスキャンすると、現在デプロイされているTrail Sentinelアプリにすぐアクセスできます。",
-    qr_step_1: "スマホの標準カメラアプリを起動",
-    qr_step_2: "QRを読み取りリンクバナーをタップ",
-    qr_step_3: "カメラスキャンまたはデモ再生を開始",
-    btn_copy_url: "URLをコピー",
-    btn_copied_url: "コピー完了",
-    spec_card_title: "システムパイプライン仕様",
-    spec_dt_seg: "概念分割・追跡",
-    spec_dt_verify: "意味論的検証",
-    spec_verify_on: "有効（クマ・ヘビ等の真偽検証・誤検知除外）",
-    spec_verify_off: "無効（純粋な形状マスク分割のみ）",
-    spec_dt_triage: "優先度トリアージ",
-    spec_dd_triage: "Muse Wonder ロールトリアージ",
-    spec_dt_cooldown: "同一対象クールダウン",
-    spec_dd_cooldown: "3.0 s（重複発話抑制）",
-    spec_dt_concepts: "基本検知コンセプト",
-    spec_dd_concepts: "ヘビ · スズメバチの巣 · クマ · イノシシ · 落石 · 滑りやすい路面",
-    log_card_title: "リアルタイム分割検知ログ",
-    log_standby: "待機中",
-    log_empty_standby:
-      "スキャンまたはデモを開始すると、フレームごとの分割オブジェクトと方位・距離判定が記録されます。",
-    log_empty_clear: "現在のフレームで検知された危険要素はありません。",
-    status_checking: "サーバー接続を確認中...",
-    status_live_prefix: "ライブ",
-    status_stub_prefix: "スタブ (デモデータ)",
-    status_calls: "呼び出し",
-    status_clear: "前方安全",
-    status_partial_err: "一部エラー",
-    status_model_changed: "モデル変更完了",
-    status_lang_changed: "言語: 日本語",
-    status_concept_added: "新規コンセプト追加",
-    stop_manual: "停止中 · いつでもスキャンを再開できます。",
-    stop_demo_done: "ヒーローデモシーン（フレーム 0..60）の再生が完了しました。",
-    stop_cap_reached: "本日のAPI呼び出し上限に達しました。明日もう一度お試しください。",
-    cam_denied:
-      "カメラの権限が拒否されたか、カメラを利用できません。カメラ権限を許可するか［デモ再生］をお試しください。",
-    err_timeout: "応答タイムアウト (10秒)",
-    err_network: "ネットワークエラー",
-    err_stale_prefix: "遅延超過",
-    err_stale_suffix: "秒 (>3.0秒の有効期限切れ)",
-    alert_prefix: "危険警告",
-    chip_toggle_hint: "クリックでON/OFF切替",
-  },
   ko: {
     page_title: "Trail Sentinel · Meta SAM 3.1 실시간 등산로 위험 감지 HUD",
     lang_prefix: "언어",
+    lang_title: "UI 및 음성 언어 전환",
     model_prefix: "모델",
+    model_title: "실시간 분할 및 검증 모델 선택",
     voice_on: "음성 켜짐",
     voice_off: "음성 꺼짐",
+    voice_title: "음성 경고 켜기/끄기",
     qr_btn: "모바일 QR",
-    kpi_distance: "최근접 위험 거리",
+    qr_title: "모바일 접속 QR 코드 열기",
+    kpi_distance: "최우선 위험 접근도",
     kpi_direction: "위험 방위각",
     kpi_latency: "파이프라인 지연",
     kpi_budget: "일일 호출 예산",
     demo_badge_replay: "데모 장면 재생 중 (실제 카메라 아님)",
     demo_badge_stub: "스텁 시뮬레이션 중 (카메라 프리뷰 + 데모 판정)",
     unknown_badge_default: "확인 불가 · 스캔 지연",
-    hero_scope: "Meta SAM 3.1 + Muse Wonder · 광학 분할 및 거리 판정",
+    hero_scope: "Meta SAM 3.1 + Muse Wonder · 광학 분할 및 접근도 판정",
     hero_title: "전방 등산로 위험 요소 실시간 계측",
     hero_copy:
-      "카메라로 등산로나 테스트 영상을 비추면 텍스트 프롬프트로 정의된 위험 요소를 픽셀 단위로 분할·추적하고, 위험 반경 진입 시 방향과 거리를 음성·진동으로 즉시 경고합니다.",
+      "카메라로 등산로나 테스트 영상을 비추면 텍스트 프롬프트로 정의된 위험 요소를 픽셀 단위로 분할·추적하고, 위험 반경 진입 시 방향과 접근도를 음성·진동으로 즉시 경고합니다.",
     showcase_badge: "▶ 실제 작동 미리보기 (낙엽 속 뱀 · 산속 뱀 · 멧돼지 · 곰)",
+    speed_02x: "0.2x (장면당 30초)",
+    speed_025x: "0.25x (장면당 24초)",
+    speed_033x: "0.33x (장면당 18초)",
+    speed_05x: "0.5x (장면당 12초)",
+    speed_10x: "1.0x (장면당 6초)",
     btn_download_verify: "검증 영상 다운로드",
     btn_start_hero: "카메라 스캔 시작",
-    btn_verify_video_hero: "검증 영상으로 스캔 (뱀 · 멧돼지)",
+    btn_verify_video_hero: "검증 영상으로 스캔 (뱀 · 멧돼지 · 곰)",
     btn_demo_hero: "히어로 데모 장면 재생 (프레임 0..60)",
     demo_badge_verify_video: "검증 영상 실시간 스캔 중 (뱀 · 멧돼지 · 곰)",
     qr_inline_title: "스마트폰 카메라로 바로 열기",
@@ -278,6 +209,7 @@ const I18N = {
       "핸드폰 기본 카메라로 스캔하면 모바일 브라우저에서 즉시 실행됩니다.",
     chips_label: "분할 개념 필터",
     btn_add_concept: "+ 개념 추가",
+    add_concept_title: "재학습 없이 커스텀 위험 개념 추가 (F7)",
     concept_name_placeholder: "새 위험 이름 (예: 쓰러진 나무)",
     concept_prompt_placeholder: "영어 프롬프트 (선택: a fallen tree)",
     voice_unsupported_placeholder: "음성인식 미지원 브라우저 · 텍스트로 입력하세요",
@@ -313,7 +245,7 @@ const I18N = {
     log_card_title: "실시간 분할 감지 로그",
     log_standby: "대기 중",
     log_empty_standby:
-      "스캔 또는 데모를 시작하면 프레임별 분할 객체와 거리·방위 판정이 기록됩니다.",
+      "스캔 또는 데모를 시작하면 프레임별 분할 객체와 방위·접근도 판정이 기록됩니다.",
     log_empty_clear: "현재 프레임에서 감지된 위험 요소가 없습니다.",
     status_checking: "서버 연결 확인 중...",
     status_live_prefix: "라이브",
@@ -336,38 +268,214 @@ const I18N = {
     alert_prefix: "위험 경고",
     chip_toggle_hint: "눌러서 켜기/끄기",
   },
+  ja: {
+    page_title: "Trail Sentinel · Meta SAM 3.1 リアルタイム登山道危険検知 HUD",
+    lang_prefix: "言語",
+    lang_title: "UI・音声言語を切り替え",
+    model_prefix: "モデル",
+    model_title: "リアルタイム分割・検証モデルを選択",
+    voice_on: "音声 ON",
+    voice_off: "音声 OFF",
+    voice_title: "音声警告のON/OFF切替",
+    qr_btn: "スマホ QR",
+    qr_title: "モバイル接続用QRコードを開く",
+    kpi_distance: "最優先の危険・接近度",
+    kpi_direction: "危険方位（時計方向）",
+    kpi_latency: "パイプライン遅延",
+    kpi_budget: "本日のAPI呼び出し枠",
+    demo_badge_replay: "デモシーン再生中（実際のカメラではありません）",
+    demo_badge_stub: "スタブシミュレーション中（カメラプレビュー＋デモ判定）",
+    unknown_badge_default: "確認不可 · スキャン遅延",
+    hero_scope: "Meta SAM 3.1 + Muse Wonder · 光学セグメンテーション＆接近度トリアージ",
+    hero_title: "前方トレイルの危険要素をリアルタイム計測",
+    hero_copy:
+      "カメラで登山道やテスト動画を映すと、テキストプロンプトで定義された危険要素をピクセル単位で分割・追跡し、危険域に入った際に方向と接近度を音声・振動で即座に警告します。",
+    showcase_badge: "▶ このように動きます · 検知プレビュー（落葉の蛇・山中の蛇・猪・熊）",
+    speed_02x: "0.2x (30秒/シーン)",
+    speed_025x: "0.25x (24秒/シーン)",
+    speed_033x: "0.33x (18秒/シーン)",
+    speed_05x: "0.5x (12秒/シーン)",
+    speed_10x: "1.0x (6秒/シーン)",
+    btn_download_verify: "検証動画をダウンロード",
+    btn_start_hero: "カメラスキャン開始",
+    btn_verify_video_hero: "検証動画でスキャン (蛇・猪・熊)",
+    btn_demo_hero: "ヒーローデモ再生 (フレーム 0..60)",
+    demo_badge_verify_video: "検証動画をスキャン中（落葉の蛇・山中の蛇・猪・熊）",
+    qr_inline_title: "スマホのカメラですぐ開く",
+    qr_expand_btn: "QRを拡大表示",
+    qr_inline_hint:
+      "スマートフォンの標準カメラでスキャンすると、モバイルブラウザで即座に起動します。",
+    chips_label: "分割コンセプトフィルター",
+    btn_add_concept: "+ コンセプト追加",
+    add_concept_title: "再学習なしでカスタム危険概念を追加 (F7)",
+    concept_name_placeholder: "新しい危険名 (例: 倒木)",
+    concept_prompt_placeholder: "英語プロンプト (任意: a fallen tree)",
+    voice_unsupported_placeholder: "音声認識非対応ブラウザ · テキストで入力してください",
+    btn_voice_input: "音声入力",
+    btn_voice_listening: "聞き取り中...",
+    btn_register_concept: "追加",
+    btn_live_start: "リアルタイムスキャン開始",
+    btn_live_stop: "スキャン停止",
+    btn_demo_start: "デモ再生",
+    btn_demo_stop: "デモ停止",
+    safety_line:
+      "補助ツールです · 安全を保証するものではなく、誤検知や見逃しが発生する場合があります。必ずご自身の目で周囲を確認してください。",
+    qr_card_title: "モバイルフィールドHUD即時接続",
+    btn_close: "閉じる",
+    qr_card_desc:
+      "スマートフォンのカメラで下のQRコードをスキャンすると、現在デプロイされているTrail Sentinelアプリにすぐアクセスできます。",
+    qr_step_1: "スマホの標準カメラアプリを起動",
+    qr_step_2: "QRを読み取りリンクバナーをタップ",
+    qr_step_3: "カメラスキャンまたはデモ再生を開始",
+    btn_copy_url: "URLをコピー",
+    btn_copied_url: "コピー完了",
+    spec_card_title: "システムパイプライン仕様",
+    spec_dt_seg: "概念分割・追跡",
+    spec_dt_verify: "意味論的検証",
+    spec_verify_on: "有効（クマ・ヘビ等の真偽検証・誤検知除外）",
+    spec_verify_off: "無効（純粋な形状マスク分割のみ）",
+    spec_dt_triage: "優先度トリアージ",
+    spec_dd_triage: "Muse Wonder ロールトリアージ",
+    spec_dt_cooldown: "同一対象クールダウン",
+    spec_dd_cooldown: "3.0 s（重複発話抑制）",
+    spec_dt_concepts: "基本検知コンセプト",
+    spec_dd_concepts: "ヘビ · スズメバチの巣 · クマ · イノシシ · 落石 · 滑りやすい路面",
+    log_card_title: "リアルタイム分割検知ログ",
+    log_standby: "待機中",
+    log_empty_standby:
+      "スキャンまたはデモを開始すると、フレームごとの分割オブジェクトと方位・接近度判定が記録されます。",
+    log_empty_clear: "現在のフレームで検知された危険要素はありません。",
+    status_checking: "サーバー接続を確認中...",
+    status_live_prefix: "ライブ",
+    status_stub_prefix: "スタブ (デモデータ)",
+    status_calls: "呼び出し",
+    status_clear: "前方安全",
+    status_partial_err: "一部エラー",
+    status_model_changed: "モデル変更完了",
+    status_lang_changed: "言語: 日本語",
+    status_concept_added: "新規コンセプト追加",
+    stop_manual: "停止中 · いつでもスキャンを再開できます。",
+    stop_demo_done: "ヒーローデモシーン（フレーム 0..60）の再生が完了しました。",
+    stop_cap_reached: "本日のAPI呼び出し上限に達しました。明日もう一度お試しください。",
+    cam_denied:
+      "カメラの権限が拒否されたか、カメラを利用できません。カメラ権限を許可するか［デモ再生］をお試しください。",
+    err_timeout: "応答タイムアウト (10秒)",
+    err_network: "ネットワークエラー",
+    err_stale_prefix: "遅延超過",
+    err_stale_suffix: "秒 (>3.0秒の有効期限切れ)",
+    alert_prefix: "危険警告",
+    chip_toggle_hint: "クリックでON/OFF切替",
+  },
 };
 
 const HAZARD_LABELS_FALLBACK = {
-  snake: { en: "Snake", ja: "ヘビ", ko: "뱀" },
-  wasp_nest: { en: "Wasp nest", ja: "スズメバチの巣", ko: "말벌집" },
-  bear: { en: "Bear", ja: "クマ", ko: "곰" },
-  boar: { en: "Wild boar", ja: "イノシシ", ko: "멧돼지" },
-  rockfall: { en: "Rockfall zone", ja: "落石区間", ko: "낙석 구간" },
-  slippery: { en: "Slippery path", ja: "滑りやすい路面", ko: "미끄러운 구간" },
+  snake: { en: "Snake", ko: "뱀", ja: "ヘビ" },
+  wasp_nest: { en: "Wasp nest", ko: "말벌집", ja: "スズメバチの巣" },
+  bear: { en: "Bear", ko: "곰", ja: "クマ" },
+  boar: { en: "Wild boar", ko: "멧돼지", ja: "イノシシ" },
+  rockfall: { en: "Rockfall zone", ko: "낙석 구간", ja: "落石区間" },
+  slippery: { en: "Slippery path", ko: "미끄러운 구간", ja: "滑りやすい路面" },
 };
+
+const DEFAULT_HAZARDS_META = [
+  { key: "snake", label_en: "Snake", label_ko: "뱀", label_ja: "ヘビ", prompt: "a snake camouflaged among fallen leaves and soil", severity: 3 },
+  { key: "wasp_nest", label_en: "Wasp nest", label_ko: "말벌집", label_ja: "スズメバチの巣", prompt: "a wasp nest attached to a tree, rock or structure", severity: 3 },
+  { key: "bear", label_en: "Bear", label_ko: "곰", label_ja: "クマ", prompt: "a bear on or near the trail", severity: 3 },
+  { key: "boar", label_en: "Wild boar", label_ko: "멧돼지", label_ja: "イノシシ", prompt: "a wild boar on or near the trail", severity: 2 },
+  { key: "rockfall", label_en: "Rockfall zone", label_ko: "낙석 구간", label_ja: "落石区間", prompt: "a pile of fallen rocks or a collapsed trail section", severity: 2 },
+  { key: "slippery", label_en: "Slippery path", label_ko: "미끄러운 구간", label_ja: "滑りやすい路面", prompt: "a hidden hole, protruding root or wet slippery fallen leaves underfoot", severity: 1 },
+];
+
+const DEFAULT_MODELS_META = [
+  {
+    id: "sam-3.1-hybrid",
+    short_label: "SAM 3.1 + Muse Spark",
+    label_en: "SAM 3.1 + Muse Spark 1.3 (Seg + Verify)",
+    label_ko: "SAM 3.1 + Muse Spark 1.3 (분할+의미검증)",
+    label_ja: "SAM 3.1 + Muse Spark 1.3 (領域分割+意味検証)",
+    description_en: "Combines Meta SAM 3.1 pixel segmentation (Box+Mask) with Muse Spark 1.3 semantic hazard verification in a single pass.",
+    description_ko: "Meta SAM 3.1 영역 분할(Box+Mask)과 Muse Spark 1.3 의미 검증(곰·뱀 진위 판별)을 동시 수행합니다.",
+    description_ja: "Meta SAM 3.1の領域分割(Box+Mask)とMuse Spark 1.3の意味検証(クマ・ヘビの真偽判別)を1パスで同時実行します。",
+  },
+  {
+    id: "muse-spark-1.3",
+    short_label: "Muse Spark 1.3",
+    label_en: "Meta Muse Spark 1.3 (Fast Multimodal ~1.1s)",
+    label_ko: "Meta Muse Spark 1.3 (초고속 ~1.1s)",
+    label_ja: "Meta Muse Spark 1.3 (超高速マルチモーダル ~1.1s)",
+    description_en: "High-speed native multimodal visual reasoning for rapid real-time camera and video hazard detection.",
+    description_ko: "고속 네이티브 멀티모달 시각 추론으로 카메라·유튜브 영상을 빠르게 실시간 판정합니다.",
+    description_ja: "高速ネイティブマルチモーダル視覚推論により、カメラや動画の危険要素をリアルタイム判定します。",
+  },
+  {
+    id: "muse-wonder-1.0",
+    short_label: "Muse Wonder 1.0",
+    label_en: "Meta Muse Wonder 1.0 (Precision Visual Verify)",
+    label_ko: "Meta Muse Wonder 1.0 (정밀 시각검증)",
+    label_ja: "Meta Muse Wonder 1.0 (高精度視覚検証)",
+    description_en: "Frontier multimodal verification for camouflaged snakes, bears in brush, and complex trail terrain.",
+    description_ko: "위장된 뱀·수풀 속 곰 등 보호색 객체의 형태와 위험도를 정밀 검증합니다.",
+    description_ja: "落ち葉に擬態したヘビや茂みの中のクマなど、保護色オブジェクトの形状と危険度を精密検証します。",
+  },
+  {
+    id: "muse-glimmer",
+    short_label: "Muse Glimmer 30B",
+    label_en: "Meta Muse Glimmer 30B (Lightweight Edge)",
+    label_ko: "Meta Muse Glimmer 30B (경량 엣지 추론)",
+    label_ja: "Meta Muse Glimmer 30B (軽量エッジ推論)",
+    description_en: "Low-latency lightweight multimodal hazard detection built on the 30B open-weight architecture.",
+    description_ko: "30B 오픈웨이트 아키텍처 기반 최소 지연 경량 멀티모달 판정 모드입니다.",
+    description_ja: "30Bオープンウェイト構造に基づく低遅延・軽量マルチモーダル判定モードです。",
+  },
+  {
+    id: "sam-3.1",
+    short_label: "Meta SAM 3.1",
+    label_en: "Meta SAM 3.1 (Pure Pixel Segmentation)",
+    label_ko: "Meta SAM 3.1 (순수 픽셀분할)",
+    label_ja: "Meta SAM 3.1 (純粋ピクセル分割)",
+    description_en: "Segments pixel masks matching the text prompt geometry without semantic classification.",
+    description_ko: "텍스트 프롬프트와 형태가 일치하는 영역의 픽셀 마스크만 분할합니다 (의미 분류 미포함).",
+    description_ja: "テキストプロンプトと形状が一致する領域のピクセルマスクのみを分割します（意味分類なし）。",
+  },
+];
+
+function normalizeLangTag(raw) {
+  if (!raw || typeof raw !== "string") return "";
+  const base = raw.trim().toLowerCase().split(/[-_]/)[0].slice(0, 2);
+  return SUPPORTED_LANGS.includes(base) ? base : "";
+}
+
+function detectBrowserOrOsLanguage() {
+  const candidates = [];
+  if (Array.isArray(navigator.languages)) {
+    candidates.push(...navigator.languages);
+  }
+  if (navigator.language) candidates.push(navigator.language);
+  if (navigator.userLanguage) candidates.push(navigator.userLanguage);
+  if (navigator.browserLanguage) candidates.push(navigator.browserLanguage);
+  if (navigator.systemLanguage) candidates.push(navigator.systemLanguage);
+  try {
+    const intlLocale = Intl.DateTimeFormat().resolvedOptions().locale;
+    if (intlLocale) candidates.push(intlLocale);
+  } catch {}
+  for (const raw of candidates) {
+    const matched = normalizeLangTag(raw);
+    if (matched) return matched;
+  }
+  return DEFAULT_LANG;
+}
 
 function detectInitialLanguage() {
   try {
     const params = new URLSearchParams(window.location.search);
-    const qLang = (params.get("lang") || "").toLowerCase().slice(0, 2);
-    if (SUPPORTED_LANGS.includes(qLang)) return qLang;
+    const qLang = normalizeLangTag(params.get("lang") || params.get("locale"));
+    if (qLang) return qLang;
   } catch {}
   try {
-    const saved = (localStorage.getItem(LANG_STORAGE_KEY) || "").toLowerCase().slice(0, 2);
-    if (SUPPORTED_LANGS.includes(saved)) return saved;
+    const saved = normalizeLangTag(localStorage.getItem(LANG_STORAGE_KEY));
+    if (saved) return saved;
   } catch {}
-  const browserLangs =
-    Array.isArray(navigator.languages) && navigator.languages.length
-      ? navigator.languages
-      : [navigator.language || DEFAULT_LANG];
-  for (const raw of browserLangs) {
-    const code = String(raw || "").toLowerCase().slice(0, 2);
-    if (SUPPORTED_LANGS.includes(code)) {
-      return code;
-    }
-  }
-  return DEFAULT_LANG;
+  return detectBrowserOrOsLanguage();
 }
 
 let currentLang = detectInitialLanguage();
@@ -383,9 +491,9 @@ let lastSpokenAt = 0;
 let emptyAlertFrames = 0;
 let serverMode = "stub";
 let selectedModel = "sam-3.1-hybrid";
-let modelsMeta = new Map();
-let hazards = [];
-let selectedConcepts = new Set();
+let modelsMeta = new Map(DEFAULT_MODELS_META.map((m) => [m.id, m]));
+let hazards = [...DEFAULT_HAZARDS_META];
+let selectedConcepts = new Set(DEFAULT_HAZARDS_META.map((h) => h.key));
 let chipElements = new Map();
 let failCount = 0;
 let lastStatus = null;
@@ -443,6 +551,39 @@ function formatBearing(clockDir) {
   return `${dir} o'clock`;
 }
 
+function getProximityTier(distanceM) {
+  const d = typeof distanceM === "number" ? distanceM : 99;
+  if (d <= 1.8) return "immediate";
+  if (d <= 3.2) return "approaching";
+  return "ahead";
+}
+
+function formatProximity(distanceM) {
+  const tier = getProximityTier(distanceM);
+  if (currentLang === "ja") {
+    if (tier === "immediate") return "至近";
+    if (tier === "approaching") return "接近";
+    return "前方警戒";
+  }
+  if (currentLang === "ko") {
+    if (tier === "immediate") return "초근접";
+    if (tier === "approaching") return "접근";
+    return "전방 경계";
+  }
+  if (tier === "immediate") return "Immediate";
+  if (tier === "approaching") return "Approaching";
+  return "Ahead";
+}
+
+function sortDetectionsByPriority(dets) {
+  if (!Array.isArray(dets)) return [];
+  return [...dets].sort((a, b) => {
+    const sevDiff = (b.severity || 1) - (a.severity || 1);
+    if (sevDiff !== 0) return sevDiff;
+    return (a.distance_m ?? 99) - (b.distance_m ?? 99);
+  });
+}
+
 function formatDetectionCount(count) {
   if (currentLang === "ja") return `${count}件検知`;
   if (currentLang === "ko") return `${count}건 감지`;
@@ -451,23 +592,69 @@ function formatDetectionCount(count) {
 
 function formatImmediateBannerText(det) {
   const dir = det.clock_direction || 12;
-  const dist = det.distance_m.toFixed(1);
+  const prox = formatProximity(det.distance_m);
   const name = getHazardLabel(det);
   if (currentLang === "ja") {
-    return `${dir}時方向 ${dist}m · ${name}を捕捉`;
+    const dirLabel = dir === 12 ? "12時方向（正面）" : `${dir}時方向`;
+    return `${dirLabel}・${prox} · ${name}を捕捉`;
   }
   if (currentLang === "ko") {
-    return `${dir}시 방향 ${dist}m ${name} 포착`;
+    const dirLabel = dir === 12 ? "12시 방향(정면)" : `${dir}시 방향`;
+    return `${dirLabel} · ${prox} · ${name} 포착`;
   }
-  return `${dir} o'clock · ${dist}m · ${name} spotted`;
+  return `${dir} o'clock · ${prox} · ${name} spotted`;
+}
+
+function formatPhraseWithoutMeters(rawText) {
+  if (!rawText) return "";
+  return String(rawText)
+    .replace(/\s*(\d+(?:\.\d+)?)\s*(?:メートル|미터|meters?|m)\b/gi, (_, numStr) => {
+      const n = parseFloat(numStr);
+      const prox = formatProximity(Number.isFinite(n) ? n : 2.0);
+      return currentLang === "ja" ? `・${prox}` : ` ${prox}`;
+    });
 }
 
 function getAlertText(alert) {
   if (!alert) return "";
-  if (currentLang === "ja" && alert.text_ja) return alert.text_ja;
-  if (currentLang === "ko" && alert.text_ko) return alert.text_ko;
-  if (currentLang === "en" && alert.text_en) return alert.text_en;
-  return alert.text || alert.text_en || alert.text_ko || "";
+  const sorted = sortDetectionsByPriority(lastDetections);
+  const matched =
+    sorted.find((d) => d.concept === alert.concept) || sorted[0] || null;
+  const topThreat = sorted[0] || null;
+
+  if (matched) {
+    const primaryDet =
+      topThreat && (topThreat.severity || 1) > (matched.severity || 1)
+        ? topThreat
+        : matched;
+    const dir = primaryDet.clock_direction || 12;
+    const prox = formatProximity(primaryDet.distance_m);
+    const name = getHazardLabel(primaryDet);
+    if (currentLang === "ja") {
+      const where = dir === 12 ? "正面（12時方向）" : `${dir}時方向`;
+      if (primaryDet !== matched) {
+        return `${where}・${prox}、${name}（足元: ${getHazardLabel(matched)}・${formatProximity(matched.distance_m)}）`;
+      }
+      return `${where}・${prox}、${name}`;
+    }
+    if (currentLang === "ko") {
+      const where = dir === 12 ? "정면(12시 방향)" : `${dir}시 방향`;
+      if (primaryDet !== matched) {
+        return `${where} · ${prox}, ${name} (발 앞: ${getHazardLabel(matched)} · ${formatProximity(matched.distance_m)})`;
+      }
+      return `${where} · ${prox}, ${name}`;
+    }
+    const where = dir === 12 ? "12 o'clock ahead" : `${dir} o'clock`;
+    if (primaryDet !== matched) {
+      return `${where} · ${prox}, ${name} (Underfoot: ${getHazardLabel(matched)} · ${formatProximity(matched.distance_m)})`;
+    }
+    return `${where} · ${prox}, ${name}`;
+  }
+
+  if (currentLang === "ja" && alert.text_ja) return formatPhraseWithoutMeters(alert.text_ja);
+  if (currentLang === "ko" && alert.text_ko) return formatPhraseWithoutMeters(alert.text_ko);
+  if (currentLang === "en" && alert.text_en) return formatPhraseWithoutMeters(alert.text_en);
+  return formatPhraseWithoutMeters(alert.text || alert.text_en || alert.text_ko || "");
 }
 
 // === [FEAT:F2] Model Switcher & Pipeline Spec Synchronization ===============
@@ -529,11 +716,29 @@ function applyLanguage(lang, { userInitiated = false } = {}) {
   if (audioLabel) {
     audioLabel.textContent = audioEnabled ? t("voice_on") : t("voice_off");
   }
+  if ($("langSelectWrap")) $("langSelectWrap").title = t("lang_title");
+  if ($("modelSelectWrap")) $("modelSelectWrap").title = t("model_title");
+  if (btnAudio) btnAudio.title = t("voice_title");
+  if (btnQrModal) btnQrModal.title = t("qr_title");
+  if (btnAddConcept) btnAddConcept.title = t("add_concept_title");
   if (conceptNameInput) {
     conceptNameInput.placeholder = t("concept_name_placeholder");
   }
   if (conceptPromptInput) {
     conceptPromptInput.placeholder = t("concept_prompt_placeholder");
+  }
+  if (verifySpeedSelect) {
+    const speedKeyMap = {
+      "0.2x": "speed_02x",
+      "0.25x": "speed_025x",
+      "0.33x": "speed_033x",
+      "0.5x": "speed_05x",
+      "1.0x": "speed_10x",
+    };
+    for (const opt of verifySpeedSelect.options) {
+      const k = speedKeyMap[opt.value];
+      if (k) opt.textContent = t(k);
+    }
   }
   if (!demoBadge.hidden) {
     if (video && video.getAttribute("src")) {
@@ -555,7 +760,8 @@ function applyLanguage(lang, { userInitiated = false } = {}) {
     if (lastAlertObj) {
       banner.textContent = `${t("alert_prefix")} · ${getAlertText(lastAlertObj)}`;
     } else if (lastDetections.length > 0) {
-      banner.textContent = formatImmediateBannerText(lastDetections[0]);
+      const topDet = sortDetectionsByPriority(lastDetections)[0];
+      banner.textContent = `${t("alert_prefix")} · ${formatImmediateBannerText(topDet)}`;
     }
   }
   if (userInitiated) {
@@ -613,15 +819,28 @@ function updateTelemetryKpis(dets, latencyMs) {
     }
     return;
   }
-  const sorted = [...dets].sort((a, b) => a.distance_m - b.distance_m);
-  const nearest = sorted[0];
-  const nearestLabel = getHazardLabel(nearest);
+  const sorted = sortDetectionsByPriority(dets);
+  const primary = sorted[0];
+  const primaryLabel = getHazardLabel(primary);
+  const primaryProx = formatProximity(primary.distance_m);
   if (kpiDistance) {
-    kpiDistance.innerHTML = `${nearest.distance_m.toFixed(1)} m <span class="kpi-unit">· ${nearestLabel}</span>`;
-    kpiDistance.classList.toggle("danger", nearest.severity >= 3 && nearest.distance_m <= 2.5);
+    kpiDistance.innerHTML = `${primaryProx} <span class="kpi-unit">· ${primaryLabel}</span>`;
+    kpiDistance.classList.toggle(
+      "danger",
+      (primary.severity || 1) >= 3 || getProximityTier(primary.distance_m) === "immediate"
+    );
   }
   if (kpiDirection) {
-    kpiDirection.textContent = formatBearing(nearest.clock_direction);
+    const extraCount = sorted.length - 1;
+    const extraSuffix =
+      extraCount > 0
+        ? currentLang === "ja"
+          ? ` <span class="kpi-unit">· 他${extraCount}件</span>`
+          : currentLang === "ko"
+          ? ` <span class="kpi-unit">· 외 ${extraCount}건</span>`
+          : ` <span class="kpi-unit">· +${extraCount}</span>`
+        : "";
+    kpiDirection.innerHTML = `${formatBearing(primary.clock_direction)}${extraSuffix}`;
   }
   if (logCountTag) {
     logCountTag.textContent = formatDetectionCount(sorted.length);
@@ -633,7 +852,9 @@ function updateTelemetryKpis(dets, latencyMs) {
         const name = getHazardLabel(d);
         const verifyText = d.verify || d.verify_ko;
         const verifyNote = verifyText ? ` · ${verifyText}` : "";
-        return `<div class="log-row num"><span class="log-row-name">${name}${verifyNote}</span><span class="log-row-meta">${formatBearing(d.clock_direction)} · ${d.distance_m.toFixed(1)} m</span></div>`;
+        const isCrit = (d.severity || 1) >= 3;
+        const rowClass = isCrit ? "log-row num crit" : "log-row num";
+        return `<div class="${rowClass}"><span class="log-row-name">${name}${verifyNote}</span><span class="log-row-meta">${formatBearing(d.clock_direction)} · ${formatProximity(d.distance_m)}</span></div>`;
       })
       .join("");
   }
@@ -873,7 +1094,9 @@ async function scanOnce(reset) {
       fireAlert(data.alert);
     } else if (dets.length > 0) {
       emptyAlertFrames = 0;
-      showImmediateBanner(dets[0]);
+      lastAlertObj = null;
+      const topDet = sortDetectionsByPriority(dets)[0];
+      showImmediateBanner(topDet);
     } else {
       emptyAlertFrames += 1;
       if (emptyAlertFrames >= 2) {
@@ -886,7 +1109,7 @@ async function scanOnce(reset) {
       frame += FRAME_STEP;
       if (frame > LAST_FRAME) {
         if (mode === "live") {
-          frame = 0;
+          frame = 10;
           lastSpoken = "";
         } else {
           stopAll(t("stop_demo_done"));
@@ -916,10 +1139,9 @@ async function scanOnce(reset) {
 
 // === [FEAT:F5] Optical HUD Canvas Overlay (Mask + BBox + Pills) =============
 function showImmediateBanner(det) {
-  if (!banner.hidden) return;
   banner.hidden = false;
-  banner.textContent = formatImmediateBannerText(det);
-  banner.className = "alert-banner" + (det.severity < 3 ? " caution" : "");
+  banner.textContent = `${t("alert_prefix")} · ${formatImmediateBannerText(det)}`;
+  banner.className = "alert-banner" + ((det.severity || 1) < 3 ? " caution" : "");
 }
 
 function drawBoxes(dets) {
@@ -927,7 +1149,15 @@ function drawBoxes(dets) {
   canvas.height = canvas.clientHeight;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  for (const d of dets) {
+  const hasCritical = Array.isArray(dets) && dets.some((d) => (d.severity || 1) >= 3);
+  if (stage) {
+    stage.classList.toggle("threat-spotlight", hasCritical);
+  }
+
+  // Draw lower-severity boxes first so critical (severity 3) boxes & pills render on top
+  const ordered = sortDetectionsByPriority(dets).reverse();
+
+  for (const d of ordered) {
     if (d.mask_png && d.mask_rect) {
       const [mx, my, mw, mh] = d.mask_rect;
       const img = new Image();
@@ -953,44 +1183,66 @@ function drawBoxes(dets) {
 
     ctx.fillStyle =
       d.severity === 3
-        ? "rgba(229, 72, 77, 0.16)"
+        ? "rgba(229, 72, 77, 0.20)"
         : d.severity === 2
-        ? "rgba(229, 169, 59, 0.14)"
-        : "rgba(198, 242, 78, 0.12)";
+        ? "rgba(229, 169, 59, 0.16)"
+        : "rgba(198, 242, 78, 0.13)";
     ctx.fillRect(px, py, pw, ph);
 
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 1.5;
+    // Outer dark halo for camouflaged background contrast
+    ctx.strokeStyle = "rgba(0, 0, 0, 0.88)";
+    ctx.lineWidth = 4.5;
     ctx.strokeRect(px, py, pw, ph);
 
-    const corner = Math.max(10, Math.min(22, Math.min(pw, ph) * 0.2));
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.moveTo(px, py + corner);
-    ctx.lineTo(px, py);
-    ctx.lineTo(px + corner, py);
-    ctx.moveTo(px + pw - corner, py);
-    ctx.lineTo(px + pw, py);
-    ctx.lineTo(px + pw, py + corner);
-    ctx.moveTo(px, py + ph - corner);
-    ctx.lineTo(px, py + ph);
-    ctx.lineTo(px + corner, py + ph);
-    ctx.moveTo(px + pw - corner, py + ph);
-    ctx.lineTo(px + pw, py + ph);
-    ctx.lineTo(px + pw, py + ph - corner);
-    ctx.stroke();
+    // Inner colored bounding box
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.strokeRect(px, py, pw, ph);
+
+    const corner = Math.max(12, Math.min(24, Math.min(pw, ph) * 0.22));
+    const traceCorners = () => {
+      ctx.beginPath();
+      ctx.moveTo(px, py + corner);
+      ctx.lineTo(px, py);
+      ctx.lineTo(px + corner, py);
+      ctx.moveTo(px + pw - corner, py);
+      ctx.lineTo(px + pw, py);
+      ctx.lineTo(px + pw, py + corner);
+      ctx.moveTo(px, py + ph - corner);
+      ctx.lineTo(px, py + ph);
+      ctx.lineTo(px + corner, py + ph);
+      ctx.moveTo(px + pw - corner, py + ph);
+      ctx.lineTo(px + pw, py + ph);
+      ctx.lineTo(px + pw, py + ph - corner);
+      ctx.stroke();
+    };
+    ctx.strokeStyle = "rgba(0, 0, 0, 0.92)";
+    ctx.lineWidth = 6;
+    traceCorners();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 3.5;
+    traceCorners();
 
     const confStr =
       typeof d.confidence === "number" ? ` · ${Math.round(d.confidence * 100)}%` : "";
     const verifyNote = d.verify || d.verify_ko;
     const verifyStr = verifyNote ? ` [${verifyNote}]` : "";
-    const label = `${getHazardLabel(d)} · ${d.distance_m.toFixed(1)}m${confStr}${verifyStr}`;
+    const label = `${getHazardLabel(d)} · ${formatProximity(d.distance_m)}${confStr}${verifyStr}`;
     ctx.font = "600 13px Inter, -apple-system, BlinkMacSystemFont, sans-serif";
     const textW = ctx.measureText(label).width;
-    const pillW = textW + 16;
-    const pillH = 24;
+    const pillW = textW + 18;
+    const pillH = 25;
     const pillX = Math.max(6, Math.min(canvas.width - pillW - 6, px));
-    const pillY = py >= pillH + 6 ? py - pillH - 4 : py + 6;
+    const pillY = py >= pillH + 8 ? py - pillH - 5 : py + 6;
+
+    ctx.fillStyle = "rgba(0, 0, 0, 0.88)";
+    ctx.beginPath();
+    if (ctx.roundRect) {
+      ctx.roundRect(pillX - 1.5, pillY - 1.5, pillW + 3, pillH + 3, 5);
+    } else {
+      ctx.rect(pillX - 1.5, pillY - 1.5, pillW + 3, pillH + 3);
+    }
+    ctx.fill();
 
     ctx.fillStyle = color;
     ctx.beginPath();
@@ -1001,8 +1253,8 @@ function drawBoxes(dets) {
     }
     ctx.fill();
 
-    ctx.fillStyle = "#000000";
-    ctx.fillText(label, pillX + 8, pillY + 16);
+    ctx.fillStyle = d.severity === 3 ? "#ffffff" : "#000000";
+    ctx.fillText(label, pillX + 9, pillY + 17);
   }
 }
 
@@ -1038,10 +1290,12 @@ function speakText(spokenText) {
 
 function fireAlert(alert) {
   const alertText = getAlertText(alert);
+  const topDet = sortDetectionsByPriority(lastDetections)[0];
+  const isDanger =
+    alert.level === "danger" || (topDet && (topDet.severity || 1) >= 3);
   banner.hidden = false;
   banner.textContent = `${t("alert_prefix")} · ${alertText}`;
-  banner.className =
-    "alert-banner" + (alert.level === "caution" ? " caution" : "");
+  banner.className = "alert-banner" + (isDanger ? "" : " caution");
 
   const now = Date.now();
   if (
@@ -1054,7 +1308,7 @@ function fireAlert(alert) {
     speakText(alertText);
   }
   if (navigator.vibrate) {
-    navigator.vibrate(alert.level === "danger" ? [250, 100, 250] : [150]);
+    navigator.vibrate(isDanger ? [250, 100, 250] : [150]);
   }
 }
 
@@ -1096,6 +1350,7 @@ async function startLiveScan() {
     emptyAlertFrames = 0;
     msg.hidden = true;
     banner.hidden = true;
+    document.body.classList.add("scanning-active");
     stage.classList.add("live-active");
     stage.classList.remove("demo-bg");
     if (serverMode !== "live") {
@@ -1123,11 +1378,12 @@ function startDemoMode() {
   unlockSpeech();
   isRunning = true;
   mode = "demo";
-  frame = 0;
+  frame = 10;
   lastSpoken = "";
   emptyAlertFrames = 0;
   msg.hidden = true;
   banner.hidden = true;
+  document.body.classList.add("scanning-active");
   stage.classList.remove("live-active");
   stage.classList.add("demo-bg");
   demoBadge.textContent = t("demo_badge_replay");
@@ -1164,6 +1420,7 @@ async function startVerificationVideoScan() {
     emptyAlertFrames = 0;
     msg.hidden = true;
     banner.hidden = true;
+    document.body.classList.add("scanning-active");
     stage.classList.add("live-active");
     stage.classList.remove("demo-bg");
     demoBadge.textContent = t("demo_badge_verify_video");
@@ -1201,8 +1458,10 @@ function stopAll(note) {
   if (heroShowcaseVideo) {
     heroShowcaseVideo.play().catch(() => {});
   }
+  document.body.classList.remove("scanning-active");
   stage.classList.remove("live-active");
   stage.classList.remove("demo-bg");
+  stage.classList.remove("threat-spotlight");
   demoBadge.hidden = true;
   banner.hidden = true;
   unknownBadge.hidden = true;
@@ -1276,9 +1535,8 @@ if (btnAddConcept && conceptForm) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name_ko: rawName,
-          name_en: rawName,
-          name_ja: rawName,
+          name: rawName,
+          lang: currentLang,
           prompt: prompt || undefined,
         }),
       });

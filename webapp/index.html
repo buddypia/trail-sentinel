@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=20261103b">
+<link rel="stylesheet" href="style.css?v=20261103d">
 </head>
 <body>
 <div class="app-shell" data-ui>
@@ -36,8 +36,8 @@
         <span id="langPrefix" class="model-select-prefix" data-i18n="lang_prefix">Lang</span>
         <select id="langSelect" class="model-select" aria-label="Select Language">
           <option value="en" selected>English (EN)</option>
-          <option value="ja">日本語 (JA)</option>
           <option value="ko">한국어 (KO)</option>
+          <option value="ja">日本語 (JA)</option>
         </select>
       </label>
 
@@ -81,7 +81,7 @@
       <!-- Divided 4-KPI Telemetry Strip -->
       <section class="kpi-strip" aria-label="Real-time telemetry">
         <div class="kpi-cell">
-          <span class="kpi-label" data-i18n="kpi_distance">Nearest Hazard Distance</span>
+          <span class="kpi-label" data-i18n="kpi_distance">Top Threat Proximity</span>
           <strong id="kpiDistance" class="kpi-value num">-</strong>
         </div>
         <div class="kpi-cell">
@@ -120,9 +120,9 @@
         <div id="message" class="start-overlay">
           <div class="start-card">
             <div class="start-main">
-              <p class="start-scope" data-i18n="hero_scope">Meta SAM 3.1 + Muse Wonder · Optical Segmentation &amp; Range Triage</p>
+              <p class="start-scope" data-i18n="hero_scope">Meta SAM 3.1 + Muse Wonder · Optical Segmentation &amp; Proximity Triage</p>
               <h2 data-i18n="hero_title">Real-Time Trail Hazard Detection</h2>
-              <p id="messageText" class="start-copy" data-i18n="hero_copy">Point your camera at a trail or test video to segment and track prompt-defined hazards at the pixel level, with instant voice and haptic warnings when entering hazard range.</p>
+              <p id="messageText" class="start-copy" data-i18n="hero_copy">Point your camera at a trail or test video to segment and track prompt-defined hazards at the pixel level, with instant voice and haptic warnings on direction and proximity.</p>
 
               <!-- Top-screen "How It Works" Live Detection Showcase Video -->
               <div class="hero-showcase-box">
@@ -146,7 +146,7 @@
 
               <div class="hero-btn-group">
                 <button id="btnStartHero" type="button" class="primary-btn" data-i18n="btn_start_hero">Start Camera Scan</button>
-                <button id="btnVerifyVideoHero" type="button" class="secondary-btn verify-video-btn" data-i18n="btn_verify_video_hero">Scan Verification Video (Snake · Boar)</button>
+                <button id="btnVerifyVideoHero" type="button" class="secondary-btn verify-video-btn" data-i18n="btn_verify_video_hero">Scan Verification Video (Snake · Boar · Bear)</button>
                 <button id="btnDemoHero" type="button" class="secondary-btn" data-i18n="btn_demo_hero">Play Hero Demo Scene (Frames 0..60)</button>
               </div>
             </div>
@@ -270,7 +270,7 @@
             <span id="logCountTag" class="log-count num">Standby</span>
           </div>
           <div id="detectionLog" class="detection-log">
-            <p class="log-empty" data-i18n="log_empty_standby">Start a live scan or demo to log segmented hazards, bearings, and distances per frame.</p>
+            <p class="log-empty" data-i18n="log_empty_standby">Start a live scan or demo to log segmented hazards, bearings, and proximity per frame.</p>
           </div>
         </section>
       </div>
@@ -278,6 +278,6 @@
   </div>
 </div>
 
-<script src="app.js?v=20261103b"></script>
+<script src="app.js?v=20261103d"></script>
 </body>
 </html>

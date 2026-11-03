@@ -24,15 +24,17 @@ def main() -> None:
     ap.add_argument("--scene", default="hero_snake_leaves")
     ap.add_argument("--frames", type=int, default=60, help="total frames to simulate")
     ap.add_argument("--step", type=int, default=5, help="sample every Nth frame")
+    ap.add_argument("--lang", default="en", choices=("en", "ko", "ja"), help="output language (default: en)")
     args = ap.parse_args()
 
     print("Trail Sentinel — mode: STUB (fixtures, $0 spend)")
-    print(f"Scene: {args.scene} | frames 0..{args.frames} step {args.step}\n")
+    print(f"Scene: {args.scene} | frames 0..{args.frames} step {args.step} | lang: {args.lang}\n")
 
     budget = CallBudget(counter_path=ROOT / ".call_counter.json")
     sam = StubSAMClient(ROOT / "fixtures")
     alerts = run_pipeline(args.scene, sam, budget=budget,
-                          total_frames=args.frames, frame_step=args.step)
+                          total_frames=args.frames, frame_step=args.step,
+                          lang=args.lang)
 
     print(f"\nDone. {len(alerts)} alert(s) emitted, "
           f"{budget.used_today()} stub SAM call(s) counted today "

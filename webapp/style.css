@@ -61,8 +61,12 @@ html, body {
   font-family: var(--font);
   font-size: var(--fs-body);
   line-height: 1.45;
-  word-break: keep-all;
+  overflow-wrap: anywhere;
   -webkit-font-smoothing: antialiased;
+}
+
+html:lang(ko) body {
+  word-break: keep-all;
 }
 
 .num {
@@ -299,7 +303,7 @@ html, body {
 .optical-frame {
   position: relative;
   flex: 1 1 auto;
-  min-height: 380px;
+  min-height: 340px;
   background: url("/hero_snake_leaves_01.jpg") center / cover no-repeat, var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-card);
@@ -311,6 +315,24 @@ html, body {
 
 .viewfinder.live-active .optical-frame {
   background: var(--surface);
+}
+
+.viewfinder.threat-spotlight .optical-frame {
+  border-color: var(--negative);
+}
+
+.viewfinder.threat-spotlight .optical-frame::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  background: radial-gradient(
+    circle at 50% 54%,
+    rgba(0, 0, 0, 0) 34%,
+    rgba(0, 0, 0, 0.46) 100%
+  );
+  box-shadow: inset 0 0 0 1px rgba(229, 72, 77, 0.45);
 }
 
 #cam {
@@ -366,10 +388,10 @@ html, body {
 /* Honesty & Status Badges (PRD F6, 9.2, 9.4) */
 .demo-badge {
   position: absolute;
-  top: 12px;
-  left: 12px;
+  bottom: 10px;
+  left: 10px;
   z-index: 12;
-  background: var(--pill-warning-bg);
+  background: rgba(43, 36, 20, 0.92);
   color: var(--pill-warning-ink);
   border: 1px solid var(--warning);
   font-size: var(--fs-small);
@@ -380,10 +402,10 @@ html, body {
 
 .unknown-badge {
   position: absolute;
-  top: 12px;
-  right: 12px;
+  bottom: 10px;
+  right: 10px;
   z-index: 12;
-  background: var(--pill-warning-bg);
+  background: rgba(43, 36, 20, 0.92);
   color: var(--pill-warning-ink);
   border: 1px solid var(--warning);
   font-size: var(--fs-small);
@@ -394,22 +416,23 @@ html, body {
 
 .alert-banner {
   position: absolute;
-  top: 48px;
-  left: 12px;
-  right: 12px;
+  top: 0;
+  left: 0;
+  right: 0;
   z-index: 15;
-  background: var(--pill-negative-bg);
-  border: 1px solid var(--negative);
+  background: rgba(44, 26, 32, 0.95);
+  border-bottom: 2px solid var(--negative);
   color: var(--text);
-  font-size: var(--fs-title);
+  font-size: 16px;
   font-weight: 600;
   text-align: center;
-  padding: 12px 16px;
-  border-radius: var(--radius-card);
+  padding: 8px 14px;
+  line-height: 1.3;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.65);
 }
 .alert-banner.caution {
-  background: var(--pill-warning-bg);
-  border-color: var(--warning);
+  background: rgba(43, 36, 20, 0.95);
+  border-bottom-color: var(--warning);
   color: var(--pill-warning-ink);
 }
 
@@ -898,6 +921,10 @@ html, body {
   border-radius: var(--radius-control);
   font-size: var(--fs-small);
 }
+.log-row.crit {
+  background: rgba(44, 26, 32, 0.72);
+  border-left: 3px solid var(--negative);
+}
 .log-row-name {
   color: var(--text);
   font-weight: 500;
@@ -905,6 +932,17 @@ html, body {
 .log-row-meta {
   color: var(--muted);
   text-align: right;
+  white-space: nowrap;
+}
+.log-row.crit .log-row-meta {
+  color: var(--pill-negative-ink);
+  font-weight: 600;
+}
+
+/* Promote Live Detection Log to top of Right Rail during active scanning */
+body.scanning-active .log-card {
+  order: -1;
+  border-color: #2c2c2c;
 }
 
 .rail-card-header {
@@ -1032,6 +1070,8 @@ html, body {
   background: var(--pill-positive-bg);
   color: var(--pill-positive-ink);
   border-radius: var(--radius-control);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .spec-list {
@@ -1061,6 +1101,99 @@ html, body {
   color: var(--text);
   font-weight: 500;
   text-align: right;
+}
+
+/* Desktop 100dvh Viewport Containment & Single-QR Optimization */
+@media (min-width: 1025px) {
+  .hud-top {
+    height: 56px;
+  }
+  .workspace-grid {
+    height: calc(100dvh - 56px);
+    max-height: calc(100dvh - 56px);
+    overflow: hidden;
+  }
+  .viewfinder {
+    height: 100%;
+    padding: 12px 16px;
+    gap: 10px;
+    overflow: hidden;
+  }
+  .kpi-cell {
+    padding: 9px 14px;
+    gap: 2px;
+  }
+  .kpi-value {
+    font-size: 21px;
+  }
+  .optical-frame {
+    flex: 1 1 0;
+    min-height: 0;
+  }
+  .start-overlay {
+    padding: 12px 16px;
+  }
+  .start-qr-box {
+    display: none;
+  }
+  .start-card {
+    grid-template-columns: minmax(0, 1fr);
+    max-width: 720px;
+    padding: 14px 18px;
+    gap: 10px;
+  }
+  .start-main {
+    gap: 8px;
+  }
+  .start-copy {
+    font-size: 13px;
+    line-height: 1.4;
+  }
+  .hero-showcase-box {
+    padding: 6px 10px 8px;
+    gap: 5px;
+  }
+  .hero-showcase-video-wrap {
+    max-height: 205px;
+  }
+  .hud-bottom {
+    padding: 10px 14px;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .dock-row {
+    padding-top: 6px;
+  }
+  .qr-panel {
+    height: 100%;
+    padding: 12px 16px;
+    overflow-y: auto;
+  }
+  .qr-sheet-inner {
+    gap: 10px;
+  }
+  .rail-card {
+    padding: 12px 14px;
+    gap: 8px;
+  }
+  .qr-desc {
+    font-size: 12px;
+    line-height: 1.35;
+  }
+  .qr-frame {
+    padding: 6px;
+  }
+  .qr-frame img {
+    width: 104px;
+    height: 104px;
+  }
+  .qr-steps {
+    gap: 4px;
+  }
+  .spec-row {
+    min-height: 26px;
+    padding: 4px 0;
+  }
 }
 
 /* Responsive Breakpoints (Tablet & Phone §12) */
@@ -1093,32 +1226,74 @@ html, body {
 
 @media (max-width: 680px) {
   :root {
-    --pad: 14px;
-    --gap: 10px;
+    --pad: 12px;
+    --gap: 8px;
+  }
+  html,
+  body,
+  .app-shell,
+  .workspace-grid,
+  .viewfinder {
+    max-width: 100%;
+    overflow-x: hidden;
   }
   .hud-top {
     flex-wrap: wrap;
+    padding: 8px 12px;
+    gap: 8px;
   }
   .hud-top h1 {
-    font-size: 17px;
+    font-size: 16px;
     white-space: nowrap;
+  }
+  .hud-actions {
+    width: 100%;
+    gap: 4px;
+    flex-wrap: nowrap;
   }
   .telemetry,
   .latency-pill,
   .model-select-prefix {
     display: none;
   }
-  .model-select {
-    max-width: 140px;
+  .model-select-wrap {
+    height: 32px;
+    padding: 0 5px;
+  }
+  .lang-select-wrap {
+    flex: 0 0 auto;
   }
   .lang-select-wrap .model-select {
-    max-width: 112px;
+    max-width: 82px;
+    font-size: 11px;
+  }
+  #modelSelectWrap {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+  #modelSelectWrap .model-select {
+    width: 100%;
+    max-width: 100%;
+    font-size: 11px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .control-btn {
+    height: 32px;
+    padding: 0 7px;
+    font-size: 11px;
+    gap: 4px;
+    flex-shrink: 0;
   }
   .kpi-strip {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .kpi-cell {
-    padding: 10px 12px;
+    padding: 8px 10px;
+    gap: 2px;
+  }
+  .kpi-value {
+    font-size: 18px;
   }
   .kpi-cell:nth-child(2) {
     border-right: none;
@@ -1128,11 +1303,36 @@ html, body {
     border-bottom: 1px solid var(--border);
   }
   .optical-frame {
-    min-height: 270px;
+    min-height: 290px;
+  }
+  .alert-banner {
+    font-size: 14px;
+    padding: 7px 10px;
+  }
+  .start-overlay {
+    padding: 10px;
   }
   .start-card {
     grid-template-columns: minmax(0, 1fr);
-    padding: 14px;
+    padding: 12px;
+    gap: 10px;
+  }
+  .hero-btn-group .primary-btn,
+  .hero-btn-group .secondary-btn {
+    width: 100%;
+    white-space: normal;
+    text-align: center;
+    height: auto;
+    min-height: 36px;
+    padding: 8px 12px;
+    line-height: 1.3;
+  }
+  .start-qr-box {
+    padding: 10px 12px;
+  }
+  .qr-thumb-wrap img {
+    width: 68px;
+    height: 68px;
   }
   .qr-frame-row {
     flex-direction: column;

@@ -92,7 +92,7 @@ _last_alert_frame: dict[str, int] = {}
 
 
 # === [FEAT:F10] Multi-language detection & alert payload serialization ======
-def _label(concept: str, lang: str = "ko") -> str:
+def _label(concept: str, lang: str = "en") -> str:
     h = next(h for h in HAZARDS if h.key == concept)
     return h.label_for(lang)
 
@@ -131,7 +131,7 @@ def _alert_payload(decision, lang: str = "en") -> dict:
         "text": phrase_for(decision.detection, lang),
         "text_en": phrase_for(decision.detection, "en"),
         "text_ja": phrase_for(decision.detection, "ja"),
-        "text_ko": decision.phrase,
+        "text_ko": phrase_for(decision.detection, "ko"),
         "level": "danger" if sev == 3 else "caution",
         "concept": decision.detection.concept,
         "score": decision.score,
@@ -154,7 +154,7 @@ def scan_frame(
                     "alert": None, "calls_today": _budget.used_today(),
                     "cap": _budget.daily_cap}
         detections = _sam.segment(scene, frame_idx)
-        decision = evaluate(detections, _prev_by_track, fps=FPS)
+        decision = evaluate(detections, _prev_by_track, fps=FPS, lang=lang)
         for det in detections:
             _prev_by_track[det.track_id] = det
 
@@ -350,7 +350,7 @@ class LiveScanner:
                 fps = FPS
             else:
                 fps = 1.0 / max(0.1, started - self._prev_scan_start)
-            decision = evaluate(detections, self._prev, fps=fps)
+            decision = evaluate(detections, self._prev, fps=fps, lang=chosen_lang)
             for det in detections:
                 self._prev[det.track_id] = det
             self._prev_scan_start = started
@@ -403,6 +403,7 @@ def status() -> dict:
         "daily_cap": _budget.daily_cap,
         "default_model": _active_model_id,
         "default_lang": "en",
+        "supported_langs": ["en", "ko", "ja"],
         "models": list(AVAILABLE_MODELS),
         "hazards": [
             {
@@ -425,21 +426,21 @@ def add_concept(body: dict) -> tuple[dict, int]:
     """Register a custom hazard concept at runtime without retraining (PRD F7)."""
     try:
         raw_name = str(
-            body.get("name_ko")
-            or body.get("label_ko")
-            or body.get("name")
+            body.get("name")
             or body.get("name_en")
+            or body.get("name_ko")
+            or body.get("label_ko")
             or body.get("name_ja")
             or ""
         )
         hazard = register_custom_hazard(
-            name_ko=raw_name,
+            name_ko=str(body.get("name_ko") or raw_name),
             prompt=body.get("prompt"),
             key=body.get("key"),
             zone=str(body.get("zone") or "front"),
             severity=int(body.get("severity") or 2),
-            name_en=body.get("name_en") or raw_name,
-            name_ja=body.get("name_ja") or raw_name,
+            name_en=body.get("name_en"),
+            name_ja=body.get("name_ja"),
         )
     except (ValueError, TypeError) as exc:
         return {"error": "bad_concept", "detail": str(exc)}, 400

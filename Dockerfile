@@ -6,7 +6,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PORT=8080 \
     TRAIL_SENTINEL_LIVE=1 \
-    DAILY_CALL_CAP=2000 \
+    DAILY_CALL_CAP=200 \
     CALL_COUNTER_FILE=/tmp/.call_counter.json
 
 COPY server.py main.py ./

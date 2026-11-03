@@ -14,7 +14,8 @@ from .triage import COOLDOWN_FRAMES, evaluate
 
 def run_pipeline(scene: str, sam: SAMClient, budget: CallBudget | None = None,
                  total_frames: int = 60, frame_step: int = 5,
-                 fps: float = 10.0, verbose: bool = True) -> list[EmittedAlert]:
+                 fps: float = 10.0, verbose: bool = True,
+                 lang: str = "en") -> list[EmittedAlert]:
     alerts: list[EmittedAlert] = []
     prev_by_track: dict[str, Detection] = {}
     last_alert_frame: dict[str, int] = {}
@@ -23,7 +24,7 @@ def run_pipeline(scene: str, sam: SAMClient, budget: CallBudget | None = None,
         if budget is not None:
             budget.spend(1)  # one (stubbed) SAM call per sampled frame
         detections = sam.segment(scene, frame_idx)
-        decision = evaluate(detections, prev_by_track, fps=fps)
+        decision = evaluate(detections, prev_by_track, fps=fps, lang=lang)
         for det in detections:
             prev_by_track[det.track_id] = det
         if decision is None:
