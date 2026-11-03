@@ -17,8 +17,8 @@ from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from trail_sentinel.config import CallBudget
-from trail_sentinel.meta_transport import (
+from config import CallBudget
+from meta_transport import (
     DEFAULT_HELPER_PATH,
     HELPER_ENV_VAR,
     HelperNotConfiguredError,
@@ -29,7 +29,7 @@ from trail_sentinel.meta_transport import (
     records_from_helper_output,
     resolve_helper_path,
 )
-from trail_sentinel.sam_client import RealSAMClient, SegmentRequest
+from sam_client import RealSAMClient, SegmentRequest
 
 RAW_FIXTURE = Path(__file__).parent / "fixtures" / "sam_hero_snake_raw.txt"
 

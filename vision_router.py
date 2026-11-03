@@ -33,9 +33,9 @@ import time
 import urllib.request
 from typing import Any
 
-from .config import HAZARD_BY_KEY, HAZARDS
-from .meta_transport import _png_rgba
-from .sam_client import Detection
+from config import HAZARD_BY_KEY, HAZARDS
+from meta_transport import _png_rgba
+from sam_client import Detection
 
 _CLOUD_BRIDGE_HOST = "aiplatform.googleapis.com"
 _cached_project_id: str | None = None

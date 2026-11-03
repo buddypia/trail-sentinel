@@ -16,7 +16,7 @@ META_MODEL_API_HOST = "api.meta.ai"
 
 # === [FEAT:F2] [FEAT:F7] [FEAT:F10] Hazard Concepts & Custom Registration ===
 # --- Hazard concepts v1 (frozen by spec, 2026-10-28). Max 6 baseline + F7 live custom concepts. ---
-# zone: "feet" (발밑/발 앞) or "front" (전방). severity: 1 (caution) .. 3 (stop).
+# zone: "feet" (underfoot) or "front" (ahead). severity: 1 (caution) .. 3 (stop).
 @dataclass(frozen=True)
 class Hazard:
     key: str

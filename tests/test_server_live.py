@@ -17,8 +17,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import server
-from trail_sentinel.config import CallBudget, reset_custom_hazards
-from trail_sentinel.sam_client import Detection
+from config import CallBudget, reset_custom_hazards
+from sam_client import Detection
 
 JPEG_BYTES = b"\xff\xd8\xff\xe0fake-jpeg-payload"
 

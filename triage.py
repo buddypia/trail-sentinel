@@ -8,8 +8,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from .config import HAZARD_BY_KEY
-from .sam_client import Detection
+from config import HAZARD_BY_KEY
+from sam_client import Detection
 
 # === [FEAT:F4] [FEAT:F5] [FEAT:F10] Priority Triage & Localized Spoken Phrase
 # Alert distance by severity: a low-severity hazard (wet leaves underfoot)

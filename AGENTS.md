@@ -1,59 +1,59 @@
 # AGENTS.md — Meta Global AI Developer Hackathon & Trail Sentinel
 
-> **機能別の実装箇所・逆引きレシピは [`FEATURE_MAP.md`](./FEATURE_MAP.md) を最初に参照すること。**
-> コード内の `[FEAT:F1]`〜`[FEAT:F12]` タグを `rg -n "\[FEAT:" .` で検索すると 1秒で該当行へ移動できる。
+> **For per-feature implementation locations and reverse-lookup recipes, read [`FEATURE_MAP.md`](./FEATURE_MAP.md) first.**
+> Search the `[FEAT:F1]`–`[FEAT:F12]` tags in code with `rg -n "\[FEAT:" .` to jump to the matching lines in one second.
 
-**概要**: スマホカメラ（または検証動画）で登山道を連続スキャンし、Meta SAM 3.1（テキストプロンプト概念分割）＋ Muse（意味検証・優先度トリアージ）で危険を検知、危険半径に入った時だけ 3言語（EN/JA/KO）の音声＋振動で警告するリアルタイム登山道危険検知 HUD。Meta Global AI Developer Hackathon（Indie Track / Push the Frontier）、提出締切 **2026-11-05 11:00 JST**。
+**Overview**: Continuously scan hiking trails with a smartphone camera (or verification videos), detect hazards with Meta SAM 3.1 (text-prompt concept segmentation) + Muse (semantic verification / priority triage), and fire trilingual (EN/JA/KO) voice + vibration alerts only when a hazard enters the danger radius — a real-time trail hazard detection HUD. Meta Global AI Developer Hackathon (Indie Track / Push the Frontier), submission deadline **2026-11-05 11:00 JST**.
 
-## 1. ワークスペース構成（どこに何があるか）
+## 1. Workspace Layout (Where Everything Lives)
 
-| 目的 | ファイル |
+| Purpose | Files |
 | :--- | :--- |
-| **どの機能をどこで直すか（機能ID・関数・DOM ID・逆引きレシピ）** | **[`FEATURE_MAP.md`](./FEATURE_MAP.md)** |
-| アプリ本体（Webバックエンド・HUD・コアパッケージ・CLI） | `server.py`, `webapp/`, `trail_sentinel/`, `main.py` |
-| 単体テスト・評価ハーネス・ライセンス台帳 | `tests/`, `eval/score.py`, `eval/data/SOURCES.md` |
-| 製品要件・技術選定・適合要件・デプロイ手順 | `PRD.md`, `TECH.md`, `HACKATHON_REQUIREMENTS.md`, `DEPLOY.md` |
-| ハッカソン公式ルール・賞金配分(`01`)、Meta AI 新モデル仕様(`02`)、アイデア提案(`03`)、応募回答(`04`)、適合監査レポート(`05`) | [`docs/`](./docs/README.md) |
-| 検証動画マスター（`individual/01..08` 個別8本、結合版 `hazard_verification_combined*.mp4`、トップ画面デモ `hero_how_it_works.mp4`） | [`videos/`](./videos/README.md) |
-| Web配信用圧縮動画（`webapp/` から相対参照） | `webapp/videos/` |
+| **Where to fix which feature (feature IDs, functions, DOM IDs, reverse-lookup recipes)** | **[`FEATURE_MAP.md`](./FEATURE_MAP.md)** |
+| App core (web backend, HUD, CLI, root `.py` modules) | `server.py`, `main.py`, `config.py`, `vision_router.py`, `triage.py`, `sam_client.py`, `meta_transport.py`, `pipeline.py`, `alerts.py`, `webapp/` |
+| Unit tests, evaluation harness, license ledger | `tests/`, `eval/score.py`, `eval/data/SOURCES.md` |
+| Product requirements, tech choices, eligibility requirements, deploy procedures | `PRD.md`, `TECH.md`, `HACKATHON_REQUIREMENTS.md`, `DEPLOY.md` |
+| Hackathon official rules & prize split (`01`), new Meta AI model specs (`02`), idea proposals (`03`), application answers (`04`), conformance audit reports (`05`) | [`docs/`](./docs/README.md) |
+| Verification video masters (`individual/01..08` — 8 individual clips, combined `hazard_verification_combined*.mp4`, hero-screen demo `hero_how_it_works.mp4`) | [`videos/`](./videos/README.md) |
+| Compressed videos for web delivery (referenced relatively from `webapp/`) | `webapp/videos/` |
 
-## 2. 機能ID クイックサマリー (`F1`〜`F12`)
+## 2. Feature ID Quick Summary (`F1`–`F12`)
 
-| ID | 機能 | 主なフロント (`webapp/`) | 主なバックエンド (`server.py`, `trail_sentinel/`) | 状態 |
+| ID | Feature | Primary frontend (`webapp/`) | Primary backend (`server.py` + root `.py`) | Status |
 | :---: | :--- | :--- | :--- | :---: |
-| **`F1`** | ライブカメラスキャン | `app.js`: `startLiveScan`, `captureFrame`, `scanOnce` | `server.py`: `LiveScanner.scan`, `Handler._scan_live` | ✅ 実装済 |
-| **`F2`** | Meta AI モデル切替 & SAM 3.1 分割 | `index.html`: `#modelSelect`<br>`app.js`: `syncModelOptionsUI` | `vision_router.py`: `AVAILABLE_MODELS`, `scan_with_vertex_vision`<br>`sam_client.py`, `meta_transport.py` | ✅ 実装済 |
-| **`F3`** | 距離・時計方向推定 & 4-KPI表示 | `index.html`: `#kpiDistance`, `#kpiDirection`<br>`app.js`: `updateTelemetryKpis` | `vision_router.py`: `estimate_visual_distance_m`<br>`meta_transport.py`: `ground_plane_distance_estimator` | ✅ 実装済 |
-| **`F4`** | 優先度トリアージ (Muse Wonder ロール) | `app.js`: `data.alert` ハンドリング | `triage.py`: `evaluate`, `score`, `ALERT_DISTANCE_M`, `COOLDOWN_FRAMES` | ✅ 実装済 |
-| **`F5`** | 音声警告(TTS)・振動・HUD描画 | `index.html`: `#overlay`, `#alertBanner`, `#btnAudio`<br>`app.js`: `drawBoxes`, `fireAlert`, `speakText` | `vision_router.py`: `synthesize_contour_mask_png`<br>`triage.py`: `phrase_for` | ✅ 実装済 |
-| **`F6`** | ヒーローデモ再生 & 誠実性バッジ | `index.html`: `#btnDemoHero`, `#demoBadge`, `#unknownBadge`<br>`app.js`: `startDemoMode`, `registerFailure` | `server.py`: `scan_frame`<br>`sam_client.py`: `StubSAMClient`<br>`fixtures/hero_snake_leaves.json` | ✅ 実装済 |
-| **`F7`** | カスタム危険概念追加 (音声/テキスト) | `index.html`: `#btnAddConcept`, `#conceptForm`, `#btnVoiceConcept` | `server.py`: `add_concept` (`POST /api/concepts`)<br>`config.py`: `register_custom_hazard` | ✅ 実装済 |
-| **`F8`** | 日次呼び出し予算ガード (`CallBudget`) | `index.html`: `#kpiBudget` | `config.py`: `CallBudget`, `.call_counter.json` (上限200/日) | ✅ 実装済 |
-| **`F9`** | 評価ハーネス & ライセンス台帳 | — | `eval/score.py`, `eval/clips_manifest.json`, `eval/data/SOURCES.md` | ✅ 実装済 |
-| **`F10`** | 多言語対応 i18n (EN / JA / KO) | `index.html`: `#langSelect`<br>`app.js`: `I18N`, `applyLanguage` | `config.py`: `Hazard.label_for`<br>`triage.py`: `phrase_for(det, lang)` | ✅ 実装済 |
-| **`F11`** | 検証動画スキャン & トッププレビュー動画 | `index.html`: `#heroShowcaseVideo`, `#btnVerifyVideoHero`<br>`app.js`: `startVerificationVideoScan` | `webapp/videos/hero_how_it_works.mp4`<br>`webapp/videos/hazard_verification_combined*.mp4` | ✅ 実装済 |
-| **`F12`** | スマホQR即時接続 & Cloud Run 構成 | `index.html`: `#btnQrModal`, `#qrPanel`<br>`app.js`: `loadStatus` (`window.location.origin`) | `Dockerfile`, `DEPLOY.md` | ✅ 実装済 |
+| **`F1`** | Live Camera Scan | `app.js`: `startLiveScan`, `captureFrame`, `scanOnce` | `server.py`: `LiveScanner.scan`, `Handler._scan_live` | ✅ Implemented |
+| **`F2`** | Meta AI Multi-Model Switcher & SAM 3.1 Segmentation | `index.html`: `#modelSelect`<br>`app.js`: `syncModelOptionsUI` | `vision_router.py`: `AVAILABLE_MODELS`, `scan_with_vertex_vision`<br>`sam_client.py`, `meta_transport.py` | ✅ Implemented |
+| **`F3`** | Distance & Clock-Bearing Estimation + 4-KPI Strip | `index.html`: `#kpiDistance`, `#kpiDirection`<br>`app.js`: `updateTelemetryKpis` | `vision_router.py`: `estimate_visual_distance_m`<br>`meta_transport.py`: `ground_plane_distance_estimator` | ✅ Implemented |
+| **`F4`** | Priority Triage (Muse Wonder Role) | `app.js`: `data.alert` handling | `triage.py`: `evaluate`, `score`, `ALERT_DISTANCE_M`, `COOLDOWN_FRAMES` | ✅ Implemented |
+| **`F5`** | Localized Voice Alerts (TTS), Haptics & Optical HUD | `index.html`: `#overlay`, `#alertBanner`, `#btnAudio`<br>`app.js`: `drawBoxes`, `fireAlert`, `speakAlert`/`pickAlertAudio`/`playAlertAudio`, `speakText` (fallback)<br>`webapp/audio/` (126 pre-generated MP3) | `vision_router.py`: `synthesize_contour_mask_png`<br>`triage.py`: `phrase_for`<br>`tools/make_voice.py` (neural fragment generator) | ✅ Implemented |
+| **`F6`** | Hero Demo Replay & Honesty Badges | `index.html`: `#btnDemoHero`, `#demoBadge`, `#unknownBadge`<br>`app.js`: `startDemoMode`, `registerFailure` | `server.py`: `scan_frame`<br>`sam_client.py`: `StubSAMClient`<br>`fixtures/hero_snake_leaves.json` | ✅ Implemented |
+| **`F7`** | Zero-Retraining Custom Hazard Concepts | `index.html`: `#btnAddConcept`, `#conceptForm`, `#btnVoiceConcept` | `server.py`: `add_concept` (`POST /api/concepts`)<br>`config.py`: `register_custom_hazard` | ✅ Implemented |
+| **`F8`** | Daily Call Budget Guard (CallBudget) | `index.html`: `#kpiBudget` | `config.py`: `CallBudget`, `.call_counter.json` (cap 200/day) | ✅ Implemented |
+| **`F9`** | Evaluation Harness & Rights-Cleared Media | — | `eval/score.py`, `eval/clips_manifest.json`, `eval/data/SOURCES.md` | ✅ Implemented |
+| **`F10`** | Multi-Language i18n (EN/KO/JA) | `index.html`: `#langSelect`<br>`app.js`: `I18N`, `applyLanguage` | `config.py`: `Hazard.label_for`<br>`triage.py`: `phrase_for(det, lang)` | ✅ Implemented |
+| **`F11`** | Verification Video Scan & How-It-Works Showcase | `index.html`: `#heroShowcaseVideo`, `#btnVerifyVideoHero`<br>`app.js`: `startVerificationVideoScan` | `webapp/videos/hero_how_it_works.mp4`<br>`webapp/videos/hazard_verification_combined*.mp4` | ✅ Implemented |
+| **`F12`** | Instant Mobile QR Access & Cloud Run Deployment | `index.html`: `#btnQrModal`, `#qrPanel`<br>`app.js`: `loadStatus` (`window.location.origin`) | `Dockerfile`, `DEPLOY.md` | ✅ Implemented |
 
-## 3. 実行・検証コマンド
+## 3. Run & Verify Commands
 
 ```bash
-# 1. 機能タグ検索（改修箇所の即時特定）
+# 1. Feature-tag search (instantly locate edit points)
 rg -n "\[FEAT:" .
 
-# 2. 単体テスト全実行（ネットワーク不要・0.02秒）
+# 2. Run all unit tests (no network needed, 0.02 s)
 python3 -m unittest discover -s tests -v
 
-# 3. CLI スタブデモ & 評価ハーネス
+# 3. CLI stub demo & evaluation harness
 python3 main.py
 python3 eval/score.py
 
-# 4. Webアプリ起動（デフォルト: ポート8765）
+# 4. Start the web app (default: port 8765)
 python3 server.py
 ```
 
-## 4. 絶対ルール（ハッカソン失格防止ガードレール）
+## 4. Absolute Rules (Hackathon Disqualification-Prevention Guardrails)
 
-- **シークレットゼロ**: APIキーやトークンをコード・設定ファイル・Git履歴・ログに一切書かない。
-- **予算ガード必須 (`F8`)**: すべてのスキャン呼び出しは必ず `CallBudget`（デフォルト `DAILY_CALL_CAP=200`）を通す。
-- **権利確認済みメディアのみ (`F9`)**: テスト・検証用の画像や動画は直接撮影またはオープンライセンス（Pexels / Wikimedia CC）のみ使用し、`eval/data/SOURCES.md` に出典を明記する。
-- **誠実性表示 (`F6`) & 補助ツール明記**: デモ・スタブ・検証動画再生時は必ず `#demoBadge` で明示し、ライブ遅延超過時は `#unknownBadge`（「確認不可」）を表示する。「安全を保証する」表現は禁止（「補助ツール」と明記）。
+- **Zero secrets**: never write API keys or tokens in code, config files, git history, or logs.
+- **Budget guard required (`F8`)**: route every scan call through `CallBudget` (default `DAILY_CALL_CAP=200`).
+- **Rights-cleared media only (`F9`)**: use only self-shot or open-license (Pexels / Wikimedia CC) images and videos for tests and verification, and cite sources in `eval/data/SOURCES.md`.
+- **Honesty display (`F6`) & assistive-tool labeling**: always disclose demo/stub/verification-video playback with `#demoBadge`, and show `#unknownBadge` ("確認不可") when live latency is exceeded. Never claim safety guarantees (label it an assistive tool).

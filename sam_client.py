@@ -6,7 +6,7 @@ with model ``sam-3.1``, streamed structured box/mask text. The wire call
 itself lives outside this package, in the connector helper, so no credential
 ever enters the project. ``RealSAMClient`` accepts an injected transport
 that returns project-normalized detection records;
-``trail_sentinel.meta_transport`` provides the live transport (subprocess to
+``meta_transport`` provides the live transport (subprocess to
 the helper) plus the parser-based record mapping and the ground-plane
 distance estimator. SAM returns no confidence and no distance, so
 ``Detection.confidence`` may be ``None`` and live distances are estimates.
@@ -19,7 +19,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Protocol
 
-from .config import HAZARD_BY_KEY, HAZARDS, CallBudget
+from config import HAZARD_BY_KEY, HAZARDS, CallBudget
 
 
 @dataclass
