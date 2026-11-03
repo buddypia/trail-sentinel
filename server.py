@@ -31,27 +31,27 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-from trail_sentinel.config import (
+from config import (
     HAZARD_BY_KEY,
     HAZARDS,
     BudgetExceeded,
     CallBudget,
     register_custom_hazard,
 )
-from trail_sentinel.meta_transport import (
+from meta_transport import (
     MetaSAMTransport,
     ground_plane_distance_estimator,
     resolve_helper_path,
 )
-from trail_sentinel.sam_client import (
+from sam_client import (
     Detection,
     HazardPrompt,
     RealSAMClient,
     SegmentRequest,
     StubSAMClient,
 )
-from trail_sentinel.triage import COOLDOWN_FRAMES, evaluate, phrase_for
-from trail_sentinel.vision_router import (
+from triage import COOLDOWN_FRAMES, evaluate, phrase_for
+from vision_router import (
     AVAILABLE_MODELS,
     DEFAULT_MODEL_ID,
     MODEL_BY_ID,

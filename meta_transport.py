@@ -56,8 +56,8 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
-from .config import HAZARD_BY_KEY
-from .sam_client import SegmentRequest
+from config import HAZARD_BY_KEY
+from sam_client import SegmentRequest
 
 #: Built-in location of the connector helper on the development VM. The
 #: credential lives in that connector's Secure Vault connection, never in

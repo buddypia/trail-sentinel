@@ -1,405 +1,405 @@
-# Trail Sentinel — PRD (제품 요구사항 문서)
+# Trail Sentinel — PRD (Product Requirements Document)
 
-## 0. 문서 메타
+## 0. Document Meta
 
-| 항목 | 내용 |
+| Item | Content |
 | --- | --- |
-| 문서 버전 | v0.4 (2026-10-31) |
-| 상태 | 현행 — 요구사항의 단일 진실 원천 (Single Source of Truth) |
-| 출품 | Meta Global AI Developer Hackathon (Cerebral Valley, Remote), Indie 트랙, 테마 Push the Frontier |
-| 상태 표기 규칙 | 각 요구에 **구현 상태**를 명시한다 — 구현됨 = 현재 코드로 동작 / 부분 = 스텁·골격 단계 / 계획 = 미구현. 실측 전 수치는 **목표**라고 명시한다 |
+| Document version | v0.4 (2026-10-31) |
+| Status | Current — Single Source of Truth for requirements |
+| Entry | Meta Global AI Developer Hackathon (Cerebral Valley, Remote), Indie track, theme Push the Frontier |
+| Status notation rule | Each requirement states its **implementation status** — Implemented = works in current code / Partial = stub/skeleton stage / Planned = not implemented. Pre-measurement figures are explicitly labeled **target** |
 
-### 0.1 목적 — 이 문서가 왜 존재하는가
+### 0.1 Purpose — Why This Document Exists
 
-- **범위 합의의 근거**: 무엇을 만들고(v1 포함), 무엇을 만들지 않는지(v1 제외)를 한곳에 고정해, 남은 기간(제출 2026-11-05 11:00 JST) 동안 스코프가 흔들리지 않게 한다.
-- **구현과 검증의 계약**: 기능 요구(F1–F11)의 수용 기준과 비기능 요구(9절)의 정량 SLO가, 코드가 "됐다"고 말할 수 있는 조건이다. 감(感)이 아니라 이 문서의 기준으로 완료를 판정한다.
-- **심사·제출 문서의 근거**: 데모 영상 구성, 제출 설명, eval 지표 제시는 전부 이 문서와 eval 실측에서 가져온다. 문서에 없는 기능을 데모에서 주장하지 않는다.
+- **Basis for scope agreement**: fixes in one place what we build (v1 in-scope) and what we don't (v1 out-of-scope), so scope doesn't drift during the remaining period (submission 2026-11-05 11:00 JST).
+- **Contract for implementation and verification**: the acceptance criteria of the functional requirements (F1–F11) and the quantitative SLOs of the non-functional requirements (§9) are the conditions under which code may be called "done." Completion is judged against this document's criteria, not gut feel.
+- **Basis for judging and submission materials**: demo video structure, submission write-up, and eval metric presentation all come from this document and eval measurements. Do not claim in the demo any feature not in this document.
 
-### 0.2 대상 독자
+### 0.2 Audience
 
-- Jun (개발·출품자) — 스코프 결정과 우선순위 판단.
-- 구현하는 AI 에이전트·개발자 — 진입점은 `AGENTS.md`, 요구의 상세는 이 문서.
-- (간접) 심사위원 — 제출 자료가 이 문서의 주장 범위 안에서만 작성됐는지를 가르는 기준.
+- Jun (developer and entrant) — scope decisions and prioritization.
+- Implementing AI agents/developers — entry point is `AGENTS.md`; requirement details are in this document.
+- (Indirect) Judges — the criterion for whether submission materials stay within this document's claimed scope.
 
-### 0.3 작성·유지 방법과 우선순위 규칙
+### 0.3 Authorship, Maintenance, and Precedence Rules
 
-- 요구가 바뀌면 **코드와 이 문서를 같은 작업 단위에서 함께 고치고**, 14절 변경 이력에 날짜·사유를 남긴다. 문서만 낡은 상태로 두지 않는다.
-- 문서끼리 충돌할 때의 우선순위:
-  1. **룰** (`../files/meta-hackathon-rules.md`) — 실격 방지가 항상 최상위.
-  2. **이 PRD** — 현행 범위·요구·수치의 기준.
-  3. **스펙** (`../files/meta-hackathon-trail-sentinel-spec/…`) — 동결 시점(2026-10-28)의 결정 기록. PRD와 다르면 PRD를 따르되, 변경 이력에 사유를 남기고 스펙에도 각주를 단다. 동결 범위의 핵심(히어로 장면, 개념 6개 상한, 테마)을 바꾸는 변경은 Jun 확인 없이 하지 않는다.
-  4. **TECH.md** — 구현 수단의 선택. PRD의 요구를 못 지키는 기술 선택이면 TECH가 아니라 요구 충족 쪽으로 고친다.
+- When requirements change, **change the code and this document in the same unit of work**, and leave the date and reason in §14 Change History. Never leave the document stale.
+- Precedence when documents conflict:
+  1. **Rules** (`../files/meta-hackathon-rules.md`) — avoiding disqualification always wins.
+  2. **This PRD** — the baseline for current scope, requirements, and figures.
+  3. **Spec** (`../files/meta-hackathon-trail-sentinel-spec/…`) — decision record frozen 2026-10-28. When it differs from the PRD, follow the PRD, leave the reason in Change History, and annotate the spec. Do not change frozen-scope essentials (hero scene, 6-concept cap, theme) without Jun's confirmation.
+  4. **TECH.md** — implementation-means choices. If a technology choice can't satisfy the PRD's requirements, fix toward satisfying the requirement rather than toward TECH.
 
-### 0.4 용어 정의
+### 0.4 Definitions
 
-| 용어 | 뜻 |
+| Term | Meaning |
 | --- | --- |
-| 위험 개념 (hazard concept) | SAM 3.1에 텍스트 프롬프트로 주는 감지 대상 정의. 코드 클래스가 아니라 프롬프트로 관리된다 |
-| 히어로 장면 | 데모의 중심 장면 — 가을 낙엽 속에 위장한 뱀을 앱이 먼저 잡는 장면 (6.1절) |
-| 스캔 틱 | 일정 주기(약 1.2초)마다 프레임을 캡처해 `/api/scan`으로 보내는 1회 사이클 |
-| 경고 리드타임 | 위험 도달 시점보다 첫 경고가 몇 초 먼저 나왔는지 (eval 측정) |
-| 기준선 (baseline) | 첫 실측 결과. 목표 수치를 실측 전에 단정하지 않는다는 스펙 방침에 따라, 정확도 지표는 기준선 확보 후 개선 비교로 성공을 판정한다 |
-| SLO | 비기능 요구의 정량 목표 (9절). 전부 실측 전 **목표**이며, 달성 주장은 실측 기록이 있을 때만 한다 |
-| 확인 불가 | 지연·실패로 그 프레임의 안전 여부를 판단할 수 없을 때의 표시 상태. 늦은 경고나 무음 실패의 대체재 |
+| Hazard concept | A detection target defined as a text prompt given to SAM 3.1. Managed as prompts, not code classes |
+| Hero scene | The demo's centerpiece — the app catching a snake camouflaged in fallen leaves before the human does (§6.1) |
+| Scan tick | One cycle of capturing a frame at a fixed interval (~1.2s) and sending it to `/api/scan` |
+| Alert lead time | How many seconds before hazard arrival the first alert fired (measured by eval) |
+| Baseline | The first measured result. Per the spec policy of not asserting accuracy figures before measurement, accuracy metrics judge success by before/after improvement comparison once the baseline is secured |
+| SLO | Quantitative targets for non-functional requirements (§9). All are pre-measurement **targets**; claim achievement only with measurement records |
+| `"확인 불가"` ("verification unavailable") | Display state shown when frame safety cannot be judged due to delay or failure. The substitute for late alerts or silent failure |
 
-### 0.5 관련 문서
+### 0.5 Related Documents
 
-| 문서 | 역할 |
+| Document | Role |
 | --- | --- |
-| `AGENTS.md` (이 repo) | AI 에이전트용 진입점 — 문서 지도, 현재 상태, 가드레일 |
-| `TECH.md` (이 repo) | 기술 선정과 아키텍처, 미정·리스크 |
-| `../files/meta-hackathon-trail-sentinel-spec/meta-hackathon-trail-sentinel-spec.md` | 스코프 동결 원본 (2026-10-28) |
-| `../files/meta-hackathon-rules.md` | 공식 룰 — 실격 조건 포함, 항상 최상위 |
-| `README.md` (이 repo) | 실행법과 구조 요약 |
-| `eval/` | 측정 하네스와 데이터 — 지표의 실측 근거 |
+| `AGENTS.md` (this repo) | Entry point for AI agents — doc map, current status, guardrails |
+| `TECH.md` (this repo) | Technology choices and architecture, open items and risks |
+| `../files/meta-hackathon-trail-sentinel-spec/meta-hackathon-trail-sentinel-spec.md` | Scope-freeze original (2026-10-28) |
+| `../files/meta-hackathon-rules.md` | Official rules — including disqualification conditions; always highest precedence |
+| `README.md` (this repo) | How to run and structure summary |
+| `eval/` | Measurement harness and data — the measured basis for metrics |
 
-## 1. 제품 개요
+## 1. Product Overview
 
-- **한 줄 정의**: 걸으면서 스마트폰 카메라를 발밑과 전방으로 향하면, SAM 3.1이 텍스트 프롬프트로 정의한 위험 개념을 실시간으로 분할·추적하고, Muse Wonder가 거리와 접근 속도로 우선순위를 매겨 위험할 때만 음성과 진동으로 짧게 경고하는 개인용 야외 위험 센티넬. 별도 하드웨어 없이 폰만 사용한다.
-- **출품**: Meta Global AI Developer Hackathon (Cerebral Valley, Remote), **Indie 트랙**, 테마 **Push the Frontier** — 폰 카메라에 "위장한 위험을 개념으로 찾아 먼저 경고하는 능력"을 새로 주는 프로젝트.
-- **포지셔닝**: "발견 후 판별"(뱀 판별 앱)도, "장면 설명"(시각장애인용 설명 앱)도 아닌, **접근 전에 다중 위험을 스캔해 먼저 경고하는** 개인용 센티넬.
-- **정직성 원칙**: 안전 보장 장치가 아니라 보조 도구다. 오탐·미탐이 존재한다는 전제를 숨기지 않고 측정 지표와 함께 공개한다.
+- **One-line definition**: a personal outdoor hazard sentinel — point a smartphone camera at your feet and ahead while walking, and SAM 3.1 segments and tracks hazard concepts defined as text prompts in real time, while Muse Wonder prioritizes by distance and approach speed and briefly warns by voice and vibration only when dangerous. Phone only, no extra hardware.
+- **Entry**: Meta Global AI Developer Hackathon (Cerebral Valley, Remote), **Indie track**, theme **Push the Frontier** — a project giving the phone camera a new capability: "finding camouflaged hazards as concepts and warning ahead."
+- **Positioning**: neither "discriminate after discovery" (snake ID apps) nor "describe the scene" (scene-description apps for the blind), but a personal sentinel that **scans multiple hazards before approach and warns ahead**.
+- **Honesty principle**: an assistive tool, not a safety guarantee. The premise that false positives and misses exist is not hidden; it is disclosed with measured metrics.
 
-## 2. 문제 정의와 배경
+## 2. Problem Definition and Background
 
-- **문제**: 가을 등산로에서 실제로 다치는 패턴 상당수는 "보지 못한 발밑·전방 위험"이다. 낙엽에 위장한 뱀, 낙엽 아래 구덩이·돌출 뿌리·젖은 낙엽은 눈으로 구분이 안 되고, 말벌집·곰·멧돼지·낙석은 접근한 뒤에야 알아차린다. 위험은 "발견한 뒤"가 아니라 "접근하는 동안" 판정돼야 한다.
-- **기존 대안의 빈틈** (스펙의 시장 조사 결론): 뱀 판별 앱(SnakeSnap 등)은 발견 후 종 판별용이다. 곰 도구는 출몰 데이터 지도(Kumamap)와 지자체 고정식 AI 카메라로, 개인이 들고 다니는 물건이 아니다. 시각장애인용 장면 설명 앱(Be My AI, Seeing AI 등)은 "찍으면 설명"하는 층이라 능동 경고가 아니다. 장애물 경고 하드웨어는 상용 제품이 사실상 한 곳 수준으로 얇다. **"설명하는 제품은 많고, 먼저 경고하는 개인용 제품은 없다"** 가 이 제품의 자리다.
-- **왜 지금인가**: 시기(가을 단풍 성수기, 뱀·곰의 동면 전 활동기)와 모델(SAM 3.1의 텍스트 프롬프트 개념 분할 — 위장 패턴과 커스텀 개념에 강함)이 동시에 맞는다.
+- **Problem**: a large share of real injury patterns on autumn trails is "unseen underfoot/ahead hazards." Snakes camouflaged in fallen leaves, pits, hidden roots, and wet leaves under leaf cover are indistinguishable to the eye, and hornet nests, bears, boars, and rockfall zones are noticed only after approach. Hazards must be judged "while approaching," not "after discovery."
+- **Gaps in existing alternatives** (spec's market-research conclusion): snake ID apps (SnakeSnap et al.) are for post-discovery species ID. Bear tools are sighting-data maps (Kumamap) and municipal fixed AI cameras — not things a person carries around. Scene-description apps for the blind (Be My AI, Seeing AI, etc.) are in the "shoot-then-describe" layer, not active alerting. Obstacle-warning hardware is effectively a single commercial product — a thin field. **"Many products describe; no personal product warns ahead"** is this product's slot.
+- **Why now**: timing (autumn foliage peak season; pre-hibernation activity period for snakes and bears) and model (SAM 3.1's text-prompt concept segmentation — strong on camouflage patterns and custom concepts) coincide.
 
-## 3. 목표와 비목표
+## 3. Goals and Non-Goals
 
-### 3.1 목표
+### 3.1 Goals
 
-- G1. 히어로 장면(낙엽 속 위장 뱀)에서, 사람이 놓친 위험을 앱이 도달 전에 경고하는 것을 실 SAM 연동으로 실증한다.
-- G2. 위험 개념을 재학습 없이 텍스트 프롬프트만으로 추가할 수 있음을 라이브로 보여준다 (F7).
-- G3. 주장을 숫자로 뒷받침한다 — 감지율·경고 리드타임·오경보율·지연을 eval로 측정해 실패 클립까지 포함해 공개한다 (F9).
-- G4. $150 크레딧 안에서 데모와 평가를 끝낸다 — 지출 가드가 물리적으로 보장한다 (F8).
-- G5. 룰 위반 없이 제출한다 — 공개 repo, 3분 데모 영상, 신규 작업만, 권리 있는 데이터만 (11절).
+- G1. In the hero scene (snake camouflaged in leaves), demonstrate with a real SAM integration that the app warns before arrival about a hazard a human missed.
+- G2. Show live that hazard concepts can be added with text prompts only, without retraining (F7).
+- G3. Back claims with numbers — measure detection rate, alert lead time, false-alarm rate, and latency with eval, and publish including failure clips (F9).
+- G4. Finish demo and evaluation within the $150 credit — a spending guard physically enforces it (F8).
+- G5. Submit without rule violations — public repo, 3-minute demo video, new work only, only data with rights (see §11).
 
-### 3.2 비목표
+### 3.2 Non-Goals
 
-- 안전 보장·사고 예방의 보장. 이 제품은 보조 도구이며 그렇게 표현하지 않는다.
-- 발견 후 종 판별을 본 기능으로 삼는 것 (종 설명은 F11의 보조 정보까지만).
-- 장면 전체를 설명하는 것, 시각장애인 전용으로 좁히는 것.
-- 커뮤니티 위험 지도·사용자 간 공유 (v1 제외, F10 범위 밖).
-- 웨어러블·전용 하드웨어, 오프라인 온디바이스 추론.
+- Guaranteeing safety or accident prevention. This product is an assistive tool and is never presented otherwise.
+- Making post-discovery species ID a core feature (species notes go only as far as F11's supplementary info).
+- Describing the whole scene, or narrowing to the blind-only use case.
+- Community hazard maps / sharing between users (out of v1; outside F10's scope).
+- Wearables / dedicated hardware, offline on-device inference.
 
-## 4. 이해관계자
+## 4. Stakeholders
 
-| 이해관계자 | 역할 | 이 문서에서 얻는 것 |
+| Stakeholder | Role | What they get from this document |
 | --- | --- | --- |
-| Jun | 개발자이자 출품자 (솔로). API 키 발급·카드 등록·최종 제출은 본인만 가능 | 스코프·우선순위·마일스톤의 기준 |
-| 심사위원 | 1단계 테마·모델 사용 확인, 2단계 배점 심사 (Impact 30 / Tooling 25 / Demo 25 / Technical 20), 3단계 라이브 결선 | 데모와 제출 설명이 이 문서의 주장 범위를 넘지 않음 |
-| 하이커 사용자 | 가을 등산객 (1차). 화면을 계속 볼 수 없는 이동 중 사용 | 경고 품질의 기준 — 짧고, 드물고, 방향이 있는 경고 (F4·F5, 9절) |
-| Cerebral Valley / Meta | 주최·플랫폼 (룰, 크레딧, API 제공) | 룰 준수 (11절), 크레딧 운용 한도 (9.5절) |
+| Jun | Developer and entrant (solo). Only Jun can issue API keys, register a card, and submit | The baseline for scope, priorities, and milestones |
+| Judges | Stage 1 theme/model-use check, stage 2 scored judging (Impact 30 / Tooling 25 / Demo 25 / Technical 20), stage 3 live finals | Assurance that demo and submission write-up don't exceed this document's claimed scope |
+| Hiker users | Autumn hikers (primary). In-motion use where the screen can't be watched continuously | The bar for alert quality — short, rare, directional alerts (F4·F5, §9) |
+| Cerebral Valley / Meta | Organizer/platform (rules, credits, API) | Rule compliance (§11), credit usage limits (§9.5) |
 
-## 5. 타깃 사용자
+## 5. Target Users
 
-- 가을 단풍 시즌 등산 하이커 (1차 타깃). 확장: 트레일러너, 야외 작업자.
-- 사용 맥락: 등산로를 걸으며 폰을 발밑(하향)과 전방으로 향한 상태. 화면을 계속 볼 수 없으므로 경고는 음성+진동 중심, 화면은 확인용.
+- Autumn foliage-season hiking hikers (primary target). Extensions: trail runners, outdoor workers.
+- Usage context: walking a trail with the phone pointed at feet (downward) and ahead. Since the screen can't be watched continuously, alerts are voice + vibration first; the screen is for confirmation.
 
-## 6. 핵심 시나리오
+## 6. Key Scenarios
 
-### 6.1 히어로 장면 — 가을 낙엽 속 위장 뱀 (고정)
+### 6.1 Hero Scene — Snake Camouflaged in Autumn Fallen Leaves (fixed)
 
-가을 산, 등산로에 낙엽이 겹겹이 쌓여 있다. 하이커가 폰을 발밑으로 향하고 걷는다. 낙엽 사이에 뱀(일본 마무시, 한국 살무사)이 위장한 채 숨어 있다. 사람 눈으로는 낙엽 패턴과 섞여 밟기 직전까지 구분이 안 된다. 그 순간 앱이 먼저 뱀의 형태를 마스크로 띄우고, 진동과 함께 짧게 경고한다.
+Autumn mountains; the trail is layered deep with fallen leaves. A hiker walks with the phone pointed at their feet. A snake (Japanese mamushi / Korean salmosa pit viper) hides camouflaged among the leaves. To the human eye it blends with the leaf pattern and is indistinguishable until just before stepping on it. At that moment the app surfaces the snake's shape as a mask first, and warns briefly with vibration.
 
-> "발 앞 2미터, 뱀"
+> "발 앞 2미터, 뱀" ("Snake, 2 meters ahead at your feet")
 
-### 6.2 라이브 확장 장면
+### 6.2 Live Expansion Scene
 
-심사위원(또는 사용자)이 제안한 새 위험 개념(예: "전동 킥보드", "쓰러진 나무")을 말로 추가하면, 모델 재학습 없이 텍스트 프롬프트만으로 즉시 감지를 시작한다 (zero-retraining custom hazard).
+When a judge (or user) proposes a new hazard concept by voice (e.g. "전동 킥보드" ("electric kick scooter"), "쓰러진 나무" ("fallen tree")), detection starts immediately with text prompts alone, without model retraining (zero-retraining custom hazard).
 
-### 6.3 그 외 일상 시나리오
+### 6.3 Other Everyday Scenarios
 
-- 전방에 말벌집·곰·멧돼지·낙석 구간이 나타나면 접근 전에 경고한다.
-- 발밑의 가려진 구덩이·돌출 뿌리·젖은 낙엽은 밟기 직전 낮은 단계로 경고한다.
+- When a hornet nest, bear, boar, or rockfall zone appears ahead, warn before approach.
+- Hidden pits, protruding roots, and wet leaves underfoot warn at a low level just before stepping.
 
-## 7. 기능 요구사항
+## 7. Functional Requirements
 
-### F1. 라이브 스캔 (카메라 → 프레임 전송)
+### F1. Live Scan (camera → frame upload)
 
-- **정의**: 폰 브라우저 후면 카메라 영상을 일정 간격으로 캡처해 백엔드로 전송하고, 결과를 받아 화면에 오버레이한다.
-- **입력**: `getUserMedia` 후면 카메라 스트림, 스캔 주기 약 1.2초.
-- **출력**: 카메라 영상 위 감지 박스+라벨(개념명, 거리) 오버레이, 상태줄(모드, 오늘 호출 수/상한).
-- **수용 기준**: 카메라 권한 허용 시 스캔이 시작되고, 거부 시 사유와 대안(데모 모드·HTTPS/localhost 조건)을 안내한다. 스캔 주기마다 `/api/scan` 응답이 오버레이에 반영된다.
-- **v1 제외**: 백그라운드(화면 꺼짐) 스캔, 온디바이스 추론.
-- **구현 상태**: **구현됨 (서버 로컬 한정)** — 카메라 모드는 실제 프레임을 캡처해(긴 변 ≤1024px, JPEG data URL) 선택된 개념 목록과 함께 `/api/scan`으로 전송하고, 서버는 `TRAIL_SENTINEL_LIVE=1`일 때만 실 SAM 3.1로 응답한다(기본값은 스텁 — 우발적 지출 방지). 서버측 최소 스캔 간격 2.5초, 호출당 타임아웃 10초, 실패 시 "확인 불가" 표시까지 구현·검증됨(2026-10-31 서버 경유 실호출로 히어로 스틸에서 뱀 감지 확인). 단 서버는 아직 이 VM에서만 실행되며, 폰에서 열 수 있는 배포(HTTPS)는 별도 미완 단계다.
+- **Definition**: captures the phone browser's rear-camera video at fixed intervals, uploads it to the backend, and overlays results on screen.
+- **Input**: `getUserMedia` rear-camera stream, scan interval ~1.2s.
+- **Output**: detection boxes + labels (concept name, distance) overlaid on camera video; status line (mode, today's call count/cap).
+- **Acceptance criteria**: when camera permission is granted, scanning starts; when denied, the reason and alternatives (demo mode, HTTPS/localhost requirement) are shown. Each scan tick's `/api/scan` response is reflected in the overlay.
+- **v1 exclusions**: background (screen-off) scanning, on-device inference.
+- **Implementation status**: **Implemented (server-local only)** — camera mode captures real frames (long edge ≤1024px, JPEG data URL) and sends them to `/api/scan` with the selected concept list; the server answers with real SAM 3.1 only when `TRAIL_SENTINEL_LIVE=1` (default is stub — prevents accidental spend). Server-side minimum scan interval 2.5s, per-call timeout 10s, and `"확인 불가"` display on failure are implemented and verified (2026-10-31 snake detection on the hero still via a real server-mediated call). But the server still runs only on this VM; deployment (HTTPS) openable from a phone is a separate unfinished step.
 
-### F2. SAM 3.1 개념 세그멘테이션 (위험 개념 v1)
+### F2. SAM 3.1 Concept Segmentation (hazard concepts v1)
 
-- **정의**: 텍스트 프롬프트로 정의한 위험 개념을 Meta Model API의 SAM 3.1으로 분할한다. 개념 목록은 코드가 아니라 프롬프트로 관리한다.
-- **입력**: 프레임 이미지 + 활성 개념 프롬프트 목록.
-- **출력**: 개념별 마스크/bbox, 신뢰도, track_id.
-- **위험 개념 v1 (6개 동결)**:
+- **Definition**: segments hazard concepts defined as text prompts using SAM 3.1 on the Meta Model API. The concept list is managed as prompts, not code.
+- **Input**: frame image + active concept prompt list.
+- **Output**: per-concept masks/bboxes, confidence, track_id.
+- **Hazard concepts v1 (6 frozen)**:
 
-| # | 개념 | 프롬프트 방향 | 구역 | 심각도 |
+| # | Concept | Prompt direction | Zone | Severity |
 | ---: | --- | --- | --- | ---: |
-| 1 | 뱀 | 낙엽·흙 위 위장한 뱀 포함 | 발밑 | 3 |
-| 2 | 말벌집 | 나무·바위·구조물에 붙은 둥지 | 전방 | 3 |
-| 3 | 곰 | 전방 대형 동물 | 전방 | 3 |
-| 4 | 멧돼지 | 전방 중형 동물 | 전방 | 2 |
-| 5 | 낙석 구간 | 길 위 돌무더기, 붕괴 구간 | 전방 | 2 |
-| 6 | 미끄러운 구간 (발밑 묶음) | 가려진 구덩이·돌출 뿌리·젖은 낙엽 | 발밑 | 1 |
+| 1 | Snake ("뱀") | Including snakes camouflaged on leaves/soil | Underfoot | 3 |
+| 2 | Hornet nest ("말벌집") | Nests attached to trees, rocks, structures | Ahead | 3 |
+| 3 | Bear ("곰") | Large animal ahead | Ahead | 3 |
+| 4 | Boar ("멧돼지") | Medium animal ahead | Ahead | 2 |
+| 5 | Rockfall zone ("낙석 구간") | Rock piles on the trail, collapsed sections | Ahead | 2 |
+| 6 | Slippery zone ("미끄러운 구간", underfoot bundle) | Hidden pits, protruding roots, wet leaves | Underfoot | 1 |
 
-  발밑 묶음은 내부적으로 프롬프트를 분리해 측정하되, 개념 수 상한 6개를 넘기지 않는다.
-- **수용 기준**: 개념별 감지 결과가 F3 추적에 track_id 단위로 넘어간다. 개념 추가·삭제가 프롬프트 변경만으로 반영된다.
-- **v1 제외**: 7개 이상의 개념, 사용자 데이터 재학습.
-- **구현 상태**: **구현됨 (이미지 경로)** — endpoint·스키마는 2026-10-31 실호출로 확정(`POST /v1/responses`, 모델 `sam-3.1`, 개념당 프롬프트 1개, 스트리밍 구조화 텍스트). `meta_transport`가 connector helper subprocess 경유로 실호출하고, box 정규화 + `meta-sam-parser` 기반 마스크 디코딩(PNG 오버레이)까지 서버 live 경로에 연결됐다. 출력에 confidence·distance가 없어 confidence는 `None`, 거리는 ground-plane 추정치다. 비디오 경로는 미실측.
+  The underfoot bundle measures with internally separate prompts but never exceeds the 6-concept cap.
+- **Acceptance criteria**: per-concept detection results pass to F3 tracking in track_id units. Concept add/remove takes effect via prompt change alone.
+- **v1 exclusions**: 7+ concepts, retraining on user data.
+- **Implementation status**: **Implemented (image path)** — endpoint/schema fixed by the 2026-10-31 real call (`POST /v1/responses`, model `sam-3.1`, one prompt per concept, streaming structured text). `meta_transport` makes real calls via a connector helper subprocess, with box normalization and `meta-sam-parser`-based mask decoding (PNG overlay) wired into the server live path. The response carries no confidence/distance, so confidence is `None` and distance is a ground-plane estimate. Video path unmeasured.
 
-### F3. 추적·거리 추정
+### F3. Tracking and Distance Estimation
 
-- **정의**: 프레임 간 동일 개체를 track_id로 추적하고, 마스크 크기·위치 변화로 위험까지의 거리와 접근 속도를 추정한다.
-- **입력**: F2의 프레임별 감지 결과.
-- **출력**: 개체별 거리(m), 접근 속도(m/s, 양수 = 접근 중).
-- **수용 기준**: 같은 개체의 거리가 프레임 흐름에 따라 연속적으로 갱신되고, 접근 속도가 F4 점수에 반영된다.
-- **v1 제외**: 정밀 측거(스테레오/LiDAR), 실 SAM 응답에 거리값이 없을 경우의 면적 기반 추정 고도화.
-- **구현 상태**: **부분** — 스텁은 fixture의 거리 구간을 프레임별로 보간하고, 접근 속도는 이전 프레임 대비로 계산한다(`triage.approach_speed_mps`). 실 SAM 연동 시 거리 추정 방식 확정이 필요하다.
-- **알려진 한계**: 스텁/데모 경로는 접근 속도를 10fps 가상 시간 기준으로 계산한다(수치는 fixture 시간 기준). 라이브 경로는 2026-10-31부터 연속 스캔 사이의 벽시계 실측 간격으로 환산한 fps를 `triage.evaluate`에 넘겨 해소했다 — 판정 로직 자체는 무변경.
+- **Definition**: tracks the same object across frames via track_id, and estimates distance to the hazard and approach speed from mask size/position changes.
+- **Input**: F2's per-frame detection results.
+- **Output**: per-object distance (m), approach speed (m/s; positive = approaching).
+- **Acceptance criteria**: the same object's distance updates continuously across the frame flow, and approach speed feeds the F4 score.
+- **v1 exclusions**: precise ranging (stereo/LiDAR); refining area-based estimation when real SAM responses lack distance values.
+- **Implementation status**: **Partial** — the stub interpolates the fixture's distance range frame by frame, and approach speed is computed against the previous frame (`triage.approach_speed_mps`). The distance-estimation method for real SAM integration needs finalizing.
+- **Known limitation**: the stub/demo path computes approach speed on a 10fps virtual-time basis (figures are in fixture time). Since 2026-10-31 the live path passes fps converted from the wall-clock interval measured between consecutive scans to `triage.evaluate`, resolving this — the judging logic itself is unchanged.
 
-### F4. Wonder 우선순위 판정
+### F4. Wonder Priority Judgment
 
-- **정의**: 감지된 위험들을 심각도·거리(근접도)·접근 속도로 점수화해, 경고할 가치가 있는 최고 위험 1건만 골라낸다. Muse Wonder의 역할이며, v1 실시간 경로는 재현 가능한 결정적 로직으로 구현한다.
-- **입력**: F3의 개체별 거리·접근 속도, 개념별 심각도, 신뢰도.
-- **출력**: 경고 결정(대상 1건, 점수, 경고 문장) 또는 무경고.
-- **판정 규칙 (현재 코드 기준)**:
-  - 심각도별 경고 거리 — 심각도 3: 3.0m 이내, 2: 2.5m 이내, 1: 1.0m 이내에서만 경고 후보.
-  - 점수 = 심각도 × 2 × 근접도(10m에서 0, 0m에서 1) + 접근 속도(상한 2.0) + 신뢰도. 최고점 1건만 경고.
-- **수용 기준**: 멀리 있는 저심각도 위험(예: 1.4m 밖 젖은 낙엽)은 경고를 내지 않고, 접근 중인 고심각도 위험은 경고 거리 진입 시 1회 경고한다.
-- **v1 제외**: 다건 동시 경고, 사용자별 임계값 학습.
-- **구현 상태**: **구현됨(로직)** — `triage.evaluate()`. Wonder API 직접 연동은 API 프리뷰 상태 확인 후 계획 단계.
+- **Definition**: scores detected hazards by severity, distance (proximity), and approach speed, and picks only the single highest-worth warning. This is Muse Wonder's role; the v1 realtime path implements it as reproducible deterministic logic.
+- **Input**: F3's per-object distance/approach speed, per-concept severity, confidence.
+- **Output**: alert decision (1 target, score, alert sentence) or no alert.
+- **Judgment rules (per current code)**:
+  - Per-severity alert distances — severity 3: within 3.0m, 2: within 2.5m, 1: within 1.0m are alert candidates only.
+  - Score = severity × 2 × proximity (0 at 10m, 1 at 0m) + approach speed (capped at 2.0) + confidence. Only the top scorer alerts.
+- **Acceptance criteria**: distant low-severity hazards (e.g. wet leaves beyond 1.4m) don't alert, while approaching high-severity hazards alert once on entering alert range.
+- **v1 exclusions**: simultaneous multi-alerts, per-user threshold learning.
+- **Implementation status**: **Implemented (logic)** — `triage.evaluate()`. Direct Wonder API integration is planned pending API preview-status confirmation.
 
-### F5. 음성 + 진동 경고
+### F5. Voice + Vibration Alerts
 
-- **정의**: F4가 경고로 결정하면, 화면 배너와 동시에 한국어 음성과 진동으로 알린다. 화면을 보지 않는 사용 환경을 전제로 한다.
-- **입력**: F4의 경고 문장, 경고 레벨(danger/caution).
-- **출력**: 빨간 배너(주의 레벨은 별도 색), Web Speech API ko-KR 음성, 진동 패턴(위험: 강한 반복, 주의: 짧게).
-- **경고 문장 규칙**: "방향 + 거리 + 대상"의 짧은 한 문장. 방향은 발밑 구역이면 "발 앞", 전방이면 "전방", 좌우 편향 시 시계 방향("3시 방향")을 붙인다. 거리는 미터 단위 정수 반올림. 예: **"발 앞 3미터, 뱀"**, "전방, 말벌집", "전방, 곰 — 접근 금지" 류의 고정 패턴을 따른다.
-- **수용 기준**: 같은 경고 문장은 반복 재생하지 않고(문장 단위 중복 억제), 경고 발생과 배너·음성·진동이 동시에 일어난다.
-- **v1 제외**: 다국어 음성, 이어폰 전용 모드, 음성 톤 개인화.
-- **구현 상태**: **구현됨(웹)** — `webapp/app.js`의 `fireAlert()`. 단, 백엔드 `alerts.py`의 TTS/진동은 CLI용 자리표시자(출력만)이며 실제 발화는 브라우저가 담당한다.
+- **Definition**: when F4 decides to alert, notifies via Korean voice and vibration alongside an on-screen banner. Assumes a usage environment where the user isn't watching the screen.
+- **Input**: F4's alert sentence, alert level (`danger`/`caution`).
+- **Output**: red banner (separate color for caution level), Web Speech API ko-KR voice, vibration patterns (danger: strong repeat; caution: short).
+- **Alert sentence rules**: short one-liners of "direction + distance + target." Direction is "발 앞" ("ahead at your feet") for the underfoot zone, "전방" ("ahead") for forward, plus clock direction ("3시 방향" ("3 o'clock direction")) on lateral bias. Distance is rounded to integer meters. Examples follow fixed patterns such as **"발 앞 3미터, 뱀"** ("Snake, 3 meters ahead at your feet"), "전방, 말벌집" ("Hornet nest ahead"), "전방, 곰 — 접근 금지" ("Bear ahead — do not approach").
+- **Acceptance criteria**: the same alert sentence is never replayed (sentence-level dedup), and banner, voice, and vibration fire simultaneously with the alert.
+- **v1 exclusions**: multilingual voice, earphone-only mode, voice tone personalization.
+- **Implementation status**: **Implemented (web)** — `fireAlert()` in `webapp/app.js`. Note the backend `alerts.py` TTS/vibration is a CLI placeholder (output only); the browser does the actual voicing.
 
-### F6. 데모 모드 (녹화 영상 재생)
+### F6. Demo Mode (recorded-video playback)
 
-- **정의**: 카메라 없이 녹화 장면(현재는 히어로 fixture 시퀀스)을 프레임 단위로 재생하며 전체 파이프라인을 시연한다. 데모 영상 촬영과 데스크톱 확인용.
-- **입력**: 장면 식별자(기본: 히어로 장면), 재생 시작/중지.
-- **출력**: 프레임 진행에 따른 박스 표시와 경고 재현, "데모 장면 재생 중 (카메라 아님)" 배지 상시 표시.
-- **수용 기준**: 카메라 권한 없이 데스크톱 브라우저에서 히어로 장면이 끝까지 재생되고 뱀 경고가 1회 발생한다. 라이브로 오인할 수 없게 배지가 유지된다.
-- **v1 제외**: 임의 영상 파일 업로드 재생(녹화 영상 실제 파이프라인은 F1/F2 실연동 범위에서 다룸).
-- **구현 상태**: **구현됨** — 웹 데모 모드 + CLI 데모(`main.py`) 모두 동작.
+- **Definition**: replays a recorded scene (currently the hero fixture sequence) frame by frame without a camera, demonstrating the full pipeline. For demo-video shooting and desktop checks.
+- **Input**: scene identifier (default: hero scene), play/stop.
+- **Output**: box display and alert reproduction as frames progress, with a persistent "데모 장면 재생 중 (카메라 아님)" ("replaying demo scene — not camera") badge.
+- **Acceptance criteria**: the hero scene plays to the end in a desktop browser without camera permission, and the snake alert fires once. The badge persists so it can't be mistaken for live.
+- **v1 exclusions**: arbitrary video-file upload playback (the recorded-video real pipeline is covered under F1/F2 live-integration scope).
+- **Implementation status**: **Implemented** — both web demo mode and CLI demo (`main.py`) work.
 
-### F7. 음성으로 새 위험 개념 추가 (라이브)
+### F7. Adding New Hazard Concepts by Voice (live)
 
-- **정의**: 사용자가 말(또는 텍스트)로 새 위험 개념을 추가하면, 재학습 없이 SAM 3.1 텍스트 프롬프트 목록에 즉시 반영해 감지를 시작한다.
-- **입력**: 새 개념명 + 프롬프트 문장 (예: "쓰러진 나무" → "a fallen tree or log blocking the trail").
-- **출력**: 개념 목록에 활성화 상태로 추가, 이후 프레임부터 감지 대상 포함.
-- **수용 기준**: 추가 직후 스캔부터 새 개념이 `/api/status` 개념 목록과 감지 결과에 나타난다. 데모에서는 심사위원 제안 개념으로 이 흐름을 라이브로 보여준다.
-- **v1 제외**: 개념 공유/마켓.
-- **구현 상태**: **구현됨** — `config.register_custom_hazard()`, `server.py`의 `POST /api/concepts`, 프론트엔드 `webapp/`의 `＋ 개념 추가` (Web Speech Recognition `ko-KR` 음성 인식 🎙 및 텍스트 입력) 구현 및 단위 테스트(`CustomConceptTests`) 검증 완료 (2026-10-31).
+- **Definition**: when the user adds a new hazard concept by voice (or text), it is immediately reflected in the SAM 3.1 text prompt list without retraining, and detection starts.
+- **Input**: new concept name + prompt sentence (e.g. "쓰러진 나무" ("fallen tree") → "a fallen tree or log blocking the trail").
+- **Output**: added to the concept list as active; included in detection targets from the next frame.
+- **Acceptance criteria**: from the scan right after adding, the new concept appears in the `/api/status` concept list and detection results. The demo shows this flow live with a judge-proposed concept.
+- **v1 exclusions**: concept sharing/marketplace.
+- **Implementation status**: **Implemented** — `config.register_custom_hazard()`, `POST /api/concepts` in `server.py`, and the frontend `＋ 개념 추가` ("Add concept") control in `webapp/` (Web Speech Recognition `ko-KR` voice input 🎙 and text input) implemented and verified by unit tests (`CustomConceptTests`) (2026-10-31).
 
-### F8. 지출 가드 (일일 호출 상한)
+### F8. Spending Guard (daily call cap)
 
-- **정의**: Meta Billing에는 강제 지출 상한이 없고 Spend Limit는 알림뿐이므로, 클라이언트가 일일 API 호출 상한을 자체 강제한다.
-- **입력**: 호출 시도, 일일 상한(기본 200회, 환경변수 `DAILY_CALL_CAP`).
-- **출력**: 카운터(JSON 파일) 갱신; 상한 도달 시 호출 차단과 `daily_call_cap_reached` 응답.
-- **수용 기준**: 상한을 넘긴 스캔 요청은 API를 호출하지 않고 차단 상태가 화면 상태줄에 표시된다. 날짜가 바뀌면 카운터가 리셋된다.
-- **v1 제외**: 개념별·기능별 세부 예산 배분, 원격 카운터 동기화.
-- **구현 상태**: **구현됨** — `config.CallBudget`, 서버·파이프라인 양쪽에서 사용 중. (주의: 현재는 스텁 호출도 카운트한다. 실연동 전에는 실제 과금 호출만 세도록 분리할지 정한다.)
+- **Definition**: since Meta Billing has no enforced spend cap and Spend Limits are notifications only, the client self-enforces a daily API call cap.
+- **Input**: call attempts, daily cap (default 200, env var `DAILY_CALL_CAP`).
+- **Output**: counter (JSON file) update; on reaching the cap, call blocking with a `daily_call_cap_reached` response.
+- **Acceptance criteria**: scan requests past the cap don't call the API, and the blocked state shows in the on-screen status line. The counter resets on date change.
+- **v1 exclusions**: per-concept/per-feature budget splits, remote counter sync.
+- **Implementation status**: **Implemented** — `config.CallBudget`, in use on both server and pipeline. (Note: currently stub calls are counted too. Before live integration, decide whether to count only actually-billed calls.)
 
-### F9. Eval 측정
+### F9. Eval Measurement
 
-- **정의**: 라벨링된 테스트 클립 세트에 파이프라인을 돌려 주장을 숫자로 검증한다. 잘 나온 클립만 고르지 않고 실패 클립도 결과에 포함한다.
-- **입력**: 클립별 라벨 manifest (클립, 위험 개념, 정답 프레임 구간, 도달 프레임).
-- **출력**: 감지율, 경고 리드타임(초), 오경보율(분당), (계획) 지연 분포.
-- **수용 기준**: 예시 manifest/results로 `eval/score.py`가 세 지표를 계산해 낸다. 실측 첫 결과가 기준선이 된다.
-- **v1 제외**: 자동 라벨링, 대규모 클립셋(수백 개) 운영.
-- **구현 상태**: **부분** — 스코어링 골격과 포맷 예시는 동작하며, `eval/data/`에 파일 14개와 파일별 출처·라이선스 기록(`eval/data/SOURCES.md`), `eval/clips_manifest.json` 작성이 완료됐다. `score.py`의 오경보율 분모는 무위험 클립 분(minute) 기준을 주 지표로, 전체 영상 분 기준을 보조 지표로 함께 출력하도록 통일했다 (2026-10-31).
+- **Definition**: runs the pipeline over a labeled test-clip set to verify claims with numbers. Failure clips are included in results — never cherry-picking good clips.
+- **Input**: per-clip label manifest (clip, hazard concept, ground-truth frame range, arrival frame).
+- **Output**: detection rate, alert lead time (s), false-alarm rate (per minute), (planned) latency distribution.
+- **Acceptance criteria**: `eval/score.py` computes the three metrics from an example manifest/results. The first measured result becomes the baseline.
+- **v1 exclusions**: auto-labeling, operating a large clip set (hundreds).
+- **Implementation status**: **Partial** — the scoring skeleton and format examples work; `eval/data/` holds 14 files with per-file source/license records (`eval/data/SOURCES.md`), and `eval/clips_manifest.json` is written. `score.py`'s false-alarm-rate denominator is unified to output hazard-free clip minutes as the primary metric with whole-video minutes as auxiliary (2026-10-31).
 
-### F10. 자주 가는 길의 위험 기억 (Active Memory 방향)
+### F10. Remembering Hazards on Frequent Routes (Active Memory direction)
 
-- **정의**: 자주 가는 길에서 반복 감지된 위험 위치를 기억하고, 재방문 시 접근 전에 더 이른 시점에 주의 환기한다.
-- **입력**: 감지 이력(위치, 개념, 시각).
-- **출력**: 재방문 시 상기 알림, 기록 화면의 위치 목록.
-- **수용 기준 (v1 범위)**: 위치 기록이 남고, 같은 구간 재진입 시 이전 기록 근거의 환기가 표시된다.
-- **v1 제외**: 커뮤니티 공유, 지도 서비스화.
-- **구현 상태**: **계획** — 기록 화면 포함 미구현.
+- **Definition**: remembers locations of repeatedly detected hazards on frequent routes, and reminds earlier — before approach — on revisit.
+- **Input**: detection history (location, concept, time).
+- **Output**: reminder on revisit, location list on the history screen.
+- **Acceptance criteria (v1 scope)**: location records persist, and re-entering the same segment shows a reminder grounded in the prior record.
+- **v1 exclusions**: community sharing, map-service features.
+- **Implementation status**: **Planned** — including the history screen, unimplemented.
 
-### F11. 위험 리포트 (Muse Spark, 보조·사후)
+### F11. Hazard Report (Muse Spark, auxiliary/post-hoc)
 
-- **정의**: 산행 후 감지 이력을 Muse Spark가 짧은 위험 리포트로 요약한다. 종 판별은 보조 설명으로만 제공한다.
-- **입력**: 감지 이력.
-- **출력**: 기록 화면의 리포트 텍스트.
-- **수용 기준**: 리포트에 종 단정이나 안전 판정 문구가 들어가지 않는다.
-- **v1 제외**: 실시간 경로 편입.
-- **구현 상태**: **계획**.
+- **Definition**: after a hike, Muse Spark summarizes detection history into a short hazard report. Species ID is offered only as auxiliary notes.
+- **Input**: detection history.
+- **Output**: report text on the history screen.
+- **Acceptance criteria**: the report contains no species assertions or safety verdicts.
+- **v1 exclusions**: realtime route integration.
+- **Implementation status**: **Planned**.
 
-## 8. 화면 구성 (스펙 기준)
+## 8. Screen Layout (per spec)
 
-- **라이브 화면** (구현됨): 카메라 영상, 감지 박스 오버레이, 최고 위험 배너, 상태줄, 개념 칩 목록.
-- **개념 목록** (부분): 활성 개념 6개 표시까지 구현. 켜기·끄기와 말로 추가 입력은 F7과 함께 계획.
-- **기록 화면** (계획): 감지 이력, 자주 가는 길의 위험 위치, Spark 리포트.
-- **평가 화면** (개발·제출용): 하네스 결과를 제출 자료로 사용. 별도 UI 대신 `eval/` 스크립트 출력이 현재 형태.
+- **Live screen** (implemented): camera video, detection box overlay, top-hazard banner, status line, concept chip list.
+- **Concept list** (partial): displaying the 6 active concepts implemented. On/off toggles and voice-add input are planned with F7.
+- **History screen** (planned): detection history, frequent-route hazard locations, Spark report.
+- **Evaluation screen** (dev/submission use): harness results used as submission material. No separate UI; `eval/` script output is the current form.
 
-## 9. 비기능 요구사항 (정량 SLO)
+## 9. Non-Functional Requirements (quantitative SLOs)
 
-이 제품의 본질은 "경고가 제때 오는가"다. 경고가 늦으면 제품이 없는 것과 같고, 늦은 경고는 없는 경고보다 위험하다. 그래서 속도를 포함한 비기능 요구를 서술이 아니라 **SLO 형태의 목표 + 측정 방법 + 미달 시 대응**으로 명시한다.
+This product's essence is "does the alert arrive in time." A late alert equals no product, and a late alert is more dangerous than none. So non-functional requirements including speed are specified not as prose but as **SLO-form targets + measurement methods + below-target responses**.
 
-### 9.1 읽는 법
+### 9.1 How to Read
 
-- 아래 수치는 전부 **실측 전 설계 목표**다. 달성했다고 주장하려면 12절 측정 계획에 따른 실측 기록이 있어야 한다.
-- 정확도 지표(감지율·오경보율)는 이와 다르다 — 스펙 방침대로 실측 전에 목표 수치를 단정하지 않고 첫 실측을 기준선으로 삼는다 (12절).
-- 현재 상태 열은 코드 기준 사실만 적는다 (구현됨/부분/계획, 미계측 포함).
+- All figures below are **pre-measurement design targets**. Claiming achievement requires measurement records per the §12 measurement plan.
+- Accuracy metrics (detection rate, false-alarm rate) differ — per spec policy, no target figures are asserted before measurement; the first measurement is the baseline (§12).
+- The Current-status column states code-based facts only (Implemented/Partial/Planned, including Unmeasured).
 
-### 9.2 종단 지연 예산 분해 (스캔 1회: 프레임 캡처 → 경고)
+### 9.2 End-to-End Latency Budget (per scan: frame capture → alert)
 
-| 단계 | 목표 (목표값) | 비고 | 현재 상태 |
+| Step | Target | Notes | Current status |
 | --- | --- | --- | --- |
-| 1. 프레임 캡처 + JPEG 인코딩 (브라우저) | p95 ≤ 100ms | 전송 이미지 긴 변 ≤1280px, ≤200KB 전제 | 구현됨 (긴 변 ≤1024px로 캡처, 미계측) |
-| 2. 업로드 (폰 → 백엔드) | p95 ≤ 300ms | 4G 또는 HTTPS 터널 환경 전제 | 미계측 |
-| 3. 백엔드 전처리 + 예산 체크 | p95 ≤ 50ms | `CallBudget` 체크 포함 | 구현됨 (스텁 경로, 미계측) |
-| 4. SAM 3.1 API 왕복 | p50 ≤ 800ms, p95 ≤ 1,800ms | **지배적 구간.** 전체 지연의 대부분이 여기이며, 이 목표가 무너지면 합계 목표도 무너진다 | 실측 (2026-10-31): helper 단독 왕복 3.0초, 서버 경유 스캔 전체 6.1초 (개념 1개, subprocess 기동·마스크 디코딩 포함) — **목표 미달**. 표본 1건이라 분포는 미계측 |
-| 5. 우선순위 판정 (`triage.evaluate`) | p95 ≤ 20ms | 결정적 로직, 로컬 계산 | 구현됨 (미계측) |
-| 6. 응답 렌더링 (박스·배너 표시) | p95 ≤ 50ms | Canvas 오버레이 | 구현됨 (미계측) |
-| 7. TTS 발화 시작 | p95 ≤ 200ms | `speechSynthesis.speak()` 호출 → 음성 시작 | 구현됨 (미계측) |
-| **합계: 캡처 → 배너+음성 시작** | **p50 ≤ 1.5초, p95 ≤ 2.5초** | 단계별 p95 합 ≈ 2.5초로 배분 | **미계측 — 계측 자체가 계획 단계** |
+| 1. Frame capture + JPEG encode (browser) | p95 ≤ 100ms | Assumes uploaded image long edge ≤1280px, ≤200KB | Implemented (captures at long edge ≤1024px, unmeasured) |
+| 2. Upload (phone → backend) | p95 ≤ 300ms | Assumes 4G or HTTPS-tunnel environment | Unmeasured |
+| 3. Backend preprocess + budget check | p95 ≤ 50ms | Includes `CallBudget` check | Implemented (stub path, unmeasured) |
+| 4. SAM 3.1 API round trip | p50 ≤ 800ms, p95 ≤ 1,800ms | **Dominant segment.** Most of total latency is here; if this target breaks, the total target breaks | Measured (2026-10-31): helper-only round trip 3.0s, full server-mediated scan 6.1s (1 concept, incl. subprocess spawn + mask decode) — **below target**. Single sample, so distribution unmeasured |
+| 5. Priority judgment (`triage.evaluate`) | p95 ≤ 20ms | Deterministic logic, local compute | Implemented (unmeasured) |
+| 6. Response rendering (box/banner display) | p95 ≤ 50ms | Canvas overlay | Implemented (unmeasured) |
+| 7. TTS utterance start | p95 ≤ 200ms | `speechSynthesis.speak()` call → voice start | Implemented (unmeasured) |
+| **Total: capture → banner + voice start** | **p50 ≤ 1.5s, p95 ≤ 2.5s** | Per-step p95s sum to ≈ 2.5s | **Unmeasured — measurement itself is planned** |
 
-- **경고 유효 기간**: 응답이 캡처 시점 기준 **3.0초**를 넘겨 도착하면, 그 프레임의 경고는 발화하지 않고 버린다. 연속으로 늦으면 9.4절의 "확인 불가" 상태로 전환한다. (미구현 — 2026-10-31 실측에서 스캔 전체 지연이 6.1초라, 지금 강제하면 라이브 경고가 거의 전부 버려진다. 지연 단축 또는 유효 기간 재정의가 선행돼야 하며, 그 전까지 라이브 경고는 지연 표시와 함께 발화된다.)
+- **Alert validity window**: responses arriving more than **3.0s** after capture time are discarded without voicing that frame's alert. On consecutive lates, transition to the §9.4 `"확인 불가"` state. (Unimplemented — the 2026-10-31 measurement showed 6.1s full-scan latency, so enforcing this now would discard nearly all live alerts. Latency reduction or validity-window redefinition must come first; until then live alerts are voiced with a latency indication.)
 
-### 9.3 스캔 주기·처리량·동시성
+### 9.3 Scan Interval, Throughput, Concurrency
 
-| 항목 | 요구 / 목표 | 측정 방법 | 미달 시 대응 | 현재 상태 |
+| Item | Requirement / target | Measurement | Below-target response | Current status |
 | --- | --- | --- | --- | --- |
-| 스캔 주기 | 라이브 1.2초 간격 유지 (프레임 스텝 5 @ 가상 10fps) | 클라이언트 틱 로그 | 주기가 밀리면 프레임 스텝을 키워 호출 빈도를 낮춘다 | 부분 — 데모는 1.2초 고정 주기. 라이브는 실호출 지연(~3–6초/스캔)과 비용 때문에 프론트 5초 틱 + 서버측 최소 간격 2.5초로 운용 중 (1.2초 주기는 실측 지연상 불가). 움직임 없을 때 간격 증가는 계획 |
-| 동시 진행 요청 | 세션당 최대 1건 — 이전 응답 전 다음 틱은 건너뜀 | 클라이언트 계측 | — (늦은 응답 누적 방지 장치) | 구현됨 — `app.js`가 진행 중 스캔 1건만 유지하고 겹치는 틱을 건너뜀 |
-| 처리량 | 단일 사용자 전제. 세션당 ≤ 50회/분 (주기에서 도출되는 상한) | `/api/status` 카운터 | 해당 없음 (다중 사용자 서비스가 아님) | 구현됨 (ThreadingHTTPServer + 전역 락 직렬화) |
-| 동시 세션 | 목표 1 (개발자 본인 + 데모 촬영 환경) | — | 다중 세션 요구가 생기면 상태 분리부터 재설계 | 전역 상태 공유 구조 |
+| Scan interval | Live 1.2s interval (frame step 5 @ virtual 10fps) | Client tick log | If the interval slips, raise frame step to lower call frequency | Partial — demo runs a fixed 1.2s interval. Live runs frontend 5s ticks + server-side 2.5s minimum interval due to real-call latency (~3–6s/scan) and cost (1.2s interval infeasible at measured latency). Widening the interval when motionless is planned |
+| In-flight requests | Max 1 per session — ticks before the previous response are skipped | Client measurement | — (guard against late-response pileup) | Implemented — `app.js` keeps only 1 in-flight scan and skips overlapping ticks |
+| Throughput | Single-user premise. ≤ 50/min per session (ceiling derived from interval) | `/api/status` counter | N/A (not a multi-user service) | Implemented (ThreadingHTTPServer + global-lock serialization) |
+| Concurrent sessions | Target 1 (developer + demo-shoot environment) | — | If multi-session demand arises, redesign starting with state separation | Shared-global-state structure |
 
-### 9.4 신뢰성 — 실패 시 동작
+### 9.4 Reliability — Failure Behavior
 
-| 항목 | 요구 / 목표 | 측정 방법 | 미달 시 대응 | 현재 상태 |
+| Item | Requirement / target | Measurement | Below-target response | Current status |
 | --- | --- | --- | --- | --- |
-| API 타임아웃 | 요청당 10초 상한. 초과 시 그 틱은 실패로 처리 | 실호출 로그 | 해당 프레임은 "확인 불가"로 표시하고 다음 틱 진행 | 구현됨 (라이브 경로: transport 타임아웃 10초 + 프론트 "확인 불가" 배지) |
-| 재시도 정책 | 실패한 프레임의 즉시 재전송 금지. 다음 스캔 틱에서 새 프레임으로 자연 재시도 | 코드 리뷰 | — | 구조상 부합 (틱 기반) |
-| 연속 실패 처리 | API·네트워크 실패 3회 연속 시 "확인 불가" 배지 + 상태줄에 사유 표시. **무음 실패 금지** — 조용히 멈추는 상태를 만들지 않는다 | 실패 주입 테스트 (네트워크 차단) | 캐시 폴백으로 전환하되 아래 표시 의무를 지킨다 | 구현됨 — 첫 실패부터 "확인 불가" 배지 표시, 3회 연속 시 상태줄에 사유 병기, 성공 시까지 유지 (2026-10-31) |
-| 캐시 폴백 표시 | 폴백 재생 중에는 "데모/캐시 재생 중" 배지 상시 표시. 라이브인 척 금지 | 화면 확인 | — | 부분 — 데모 모드 배지는 구현됨, 캐시 폴백 자체는 계획 |
-| 지출 가드 차단 | 일일 캡 도달 시 API를 호출하지 않고 `daily_call_cap_reached` (HTTP 429) 반환 + 상태줄 표시 | 캡을 낮춰 강제 도달 테스트 | — | 구현됨 |
-| 지연 초과 | 9.2절 유효 기간(3.0초) 초과 응답은 경고로 쓰지 않음 | 지연 주입 후 경고 미발화 확인 | "확인 불가" 표시 | 계획 |
+| API timeout | 10s cap per request. Past it, the tick fails | Real-call log | That frame shows `"확인 불가"`; next tick proceeds | Implemented (live path: transport timeout 10s + frontend `"확인 불가"` badge) |
+| Retry policy | No immediate resend of failed frames. Natural retry with a fresh frame on the next scan tick | Code review | — | Structurally compliant (tick-based) |
+| Consecutive failures | On 3 consecutive API/network failures, `"확인 불가"` badge + reason on the status line. **No silent failure** — never a state that quietly stops | Fault-injection test (network cut) | Switch to cache fallback honoring the display duty below | Implemented — `"확인 불가"` badge from the first failure, reason appended to the status line on 3 consecutive, held until success (2026-10-31) |
+| Cache-fallback display | While replaying fallback, persistent "데모/캐시 재생 중" ("replaying demo/cache") badge. Never pose as live | Screen check | — | Partial — demo-mode badge implemented; cache fallback itself planned |
+| Spending-guard block | On daily-cap reach, don't call the API; return `daily_call_cap_reached` (HTTP 429) + status-line display | Force-reach test with lowered cap | — | Implemented |
+| Latency overrun | Responses past the §9.2 validity window (3.0s) are not used as alerts | Confirm no alert after latency injection | `"확인 불가"` display | Planned |
 
-### 9.5 비용 상한
+### 9.5 Cost Cap
 
-| 항목 | 요구 / 목표 | 측정 방법 | 미달 시 대응 | 현재 상태 |
+| Item | Requirement / target | Measurement | Below-target response | Current status |
 | --- | --- | --- | --- | --- |
-| 일일 호출 캡 | 기본 200회/일 (`DAILY_CALL_CAP`) — 코드가 강제하는 물리적 상한. Meta Billing의 Spend Limit는 알림일 뿐이라 이것만이 실제 차단이다 | `.call_counter.json` + `/api/status` | 캡 도달 = 그날 실호출 중단 (9.4절) | 구현됨 (스텁 호출도 카운트 중) |
-| 단가 전제 | SAM 3.1: 이미지 $2.50/1k, 비디오 프레임 $0.20/1k frames (안내 단가) | Meta Model API Billing 페이지 대조 | 단가가 다르면 프레임 예산부터 재계산 | 전제만 확정, 실청구 미확인 |
-| 총 지출 | 해커톤 전 기간 누적 **$150 크레딧 이내**. 이미지 경로 환산 시 일일 캡 200회 ≈ $0.50/일 수준이라 캡이 곧 예산 방벽 | 크레딧 반영 확인 후 첫 실호출 전후 Billing 대조 (주 단위) | 예상보다 빨리 소진되면 eval 프레임 예산과 라이브 주기부터 줄인다 | 크레딧 수령 확인됨 (2026-10-31, Jun). 실호출 시작: 검증 2회(이미지 각 1장, 총 $0.005). 라이브 스캔은 개념당 1콜이라 6개념 풀스캔 = $0.015/회 — 비용 구조는 TECH.md 참조 |
-| eval 프레임 예산 | eval 풀런 1회 ≤ 20,000프레임 (비디오 단가 환산 ≈ $4) 을 목표 상한으로 잡고, 총 프레임 수를 먼저 정한 뒤 실행 | manifest 프레임 수 합산 | 예산 초과 시 클립 수를 줄이지 말고 프레임 샘플링 간격을 넓힌다 | 계획 (실 manifest 작성 후 확정) |
+| Daily call cap | Default 200/day (`DAILY_CALL_CAP`) — the physically enforced ceiling in code. Meta Billing's Spend Limit is notification-only, so this is the only real block | `.call_counter.json` + `/api/status` | Cap reached = real calls stop that day (§9.4) | Implemented (stub calls also counted) |
+| Unit-cost premise | SAM 3.1: images $2.50/1k, video frames $0.20/1k frames (listed rates) | Cross-check against Meta Model API Billing page | If rates differ, recompute from the frame budget | Premise only; actual billing unconfirmed |
+| Total spend | Whole-hackathon cumulative within **$150 credit**. In image-path terms daily cap 200 ≈ $0.50/day, so the cap is the budget wall | After credit reflects, cross-check Billing before/after first real call (weekly) | If burn is faster than expected, cut eval frame budget and live interval first | Credit receipt confirmed (2026-10-31, Jun). Real calls started: 2 verification calls (1 image each, $0.005 total). Live scans cost 1 call per concept, so a full 6-concept scan = $0.015/run — see TECH.md for cost structure |
+| Eval frame budget | Target cap of ≤ 20,000 frames per full eval run (≈ $4 at video rates); fix total frames before running | Sum manifest frame counts | Past budget, widen frame sampling interval rather than cutting clips | Planned (finalize after real manifest) |
 
-### 9.6 보안 — API 키
+### 9.6 Security — API Keys
 
-| 항목 | 요구 | 현재 상태 |
+| Item | Requirement | Current status |
 | --- | --- | --- |
-| 키 보관 위치 | Secure Vault의 `custom.meta-model-api` connection에만 보관. project server와 프론트엔드는 키를 직접 읽거나 받지 않는다. connector helper는 `hsurr:` surrogate만 다룬다 | 구조 변경됨 — project의 환경변수 키 로더를 제거했고, connector local probe에서 surrogate 부착만 확인. provider 요청은 보내지 않음 |
-| 기록 금지 | 키 값을 코드·문서·로그·채팅·스크린샷에 쓰지 않는다. `.env` 파일은 `.gitignore`에 포함한다 | `.gitignore` 반영됨 |
-| 공개 전 점검 | repo를 public으로 전환하기 전에 git 이력 전체를 대상으로 시크릿 문자열 점검을 통과한다 (13절 마일스톤 게이트) | 계획 |
-| 유출 시 대응 | 즉시 키 폐기·재발급이 유일한 즉시 브레이크. Billing 알림은 사후 인지 수단일 뿐이다 | 절차만 확정 |
+| Key storage | Only in Secure Vault's `custom.meta-model-api` connection. Project server and frontend never read or receive the key directly. Connector helper handles only `hsurr:` surrogates | Structure changed — removed the project's env-var key loader; verified surrogate attachment only in the connector local probe. No provider requests sent |
+| No recording | Never write key values in code, docs, logs, chats, or screenshots. `.env` files are in `.gitignore` | Reflected in `.gitignore` |
+| Pre-public check | Before switching the repo to public, pass a secret-string sweep over the entire git history (§13 milestone gate) | Planned |
+| On leak | Immediate key revocation/reissue is the only instant brake. Billing alerts are after-the-fact awareness only | Procedure only |
 
-### 9.7 호환성
+### 9.7 Compatibility
 
-| 항목 | 요구 / 목표 | 현재 상태 |
+| Item | Requirement / target | Current status |
 | --- | --- | --- |
-| Android Chrome (최신 2개 버전) | 카메라·Canvas·TTS·진동 전부 동작 | 미검증 (실기기 테스트 필요) |
-| iOS Safari 16.4+ | 카메라·TTS 동작. **진동은 iOS Safari 미지원** — `navigator.vibrate`가 no-op이므로 음성+배너가 대체 채널 | 미검증 |
-| 데스크톱 Chrome | 데모 모드 전용으로 동작 (데모 영상 촬영 경로) | 구현됨 |
-| 카메라 전제 | `getUserMedia`는 HTTPS 또는 localhost에서만 동작 — 폰 실기기 사용 시 HTTPS 배포/터널이 선행 조건 | 로컬만 구성됨, 배포 미정 (TECH.md 리스크) |
-| 백엔드 런타임 | Python 3.10+ 표준 라이브러리만으로 실행 (현재 검증 환경 3.12) | 구현됨 |
+| Android Chrome (latest 2 versions) | Camera, Canvas, TTS, vibration all work | Unverified (real-device testing needed) |
+| iOS Safari 16.4+ | Camera and TTS work. **No vibration on iOS Safari** — `navigator.vibrate` is a no-op, so voice + banner are the fallback channels | Unverified |
+| Desktop Chrome | Works as demo-mode-only (demo-video shooting path) | Implemented |
+| Camera premise | `getUserMedia` works only on HTTPS or localhost — HTTPS deploy/tunnel is a precondition for real-phone use | Local only; deploy undecided (TECH.md risk) |
+| Backend runtime | Runs on Python 3.10+ stdlib only (currently verified on 3.12) | Implemented |
 
-### 9.8 접근성과 안전 고지
+### 9.8 Accessibility and Safety Notice
 
-| 항목 | 요구 | 현재 상태 |
+| Item | Requirement | Current status |
 | --- | --- | --- |
-| 경고 채널 다중화 | 색상만으로 경고하지 않는다 — 배너 텍스트 + 음성 + 진동을 동시에 쓴다 | 구현됨 (진동은 iOS 제외, 9.7절) |
-| 안전 고지 표시 | 라이브 화면 하단에 "보조 도구이며 안전을 보장하지 않습니다" 고정 고지를 둔다. 제출 자료·README에도 같은 취지를 명시한다 | **구현됨** — README·이 문서·웹앱 화면 하단 고정 고지 모두 반영됨 |
-| 종 단정 금지 | 어떤 화면·리포트에서도 종 판별을 근거로 한 안전 판정 문구를 쓰지 않는다 | 요구만 확정 (F11 수용 기준) |
-| 포지셔닝 금지선 | "단순 이미지 분석기"로 보이면 룰상 감점·실격 영역이다. 모든 자료에서 실시간 능동 경고 시스템(연속 스캔·추적·우선순위·음성 경고)으로만 제시한다 | 문서 전반 적용 중 |
+| Multi-channel alerts | Never warn by color alone — banner text + voice + vibration together | Implemented (vibration except iOS, §9.7) |
+| Safety notice | Fixed notice at the bottom of the live screen: "보조 도구이며 안전을 보장하지 않습니다" ("an assistive tool; safety is not guaranteed"). Same intent in submission materials and README | **Implemented** — reflected in README, this document, and the fixed webapp screen-bottom notice |
+| No species assertions | No screen or report may carry safety verdicts grounded in species ID | Requirement only (F11 acceptance criteria) |
+| Positioning red line | Reading as a "simple image analyzer" is rulebook demerit/disqualification territory. All materials present it only as a realtime active-alert system (continuous scan, tracking, prioritization, voice alerts) | Applied throughout docs |
 
-## 10. 가정·제약·리스크
+## 10. Assumptions, Constraints, Risks
 
-### 10.1 가정
+### 10.1 Assumptions
 
-- A1. SAM 3.1이 안내된 대로 텍스트 프롬프트 개념 분할·추적을 Meta Model API로 제공하며, 단가 전제(이미지 $2.50/1k, 비디오 프레임 $0.20/1k)가 크게 바뀌지 않는다.
-- A2. Muse Wonder의 API 프리뷰가 기간 내 열리거나, 닫혀 있어도 결정적 로직 폴백으로 Tooling 배점의 핵심(SAM + 우선순위 판정)을 유지할 수 있다.
-- A3. $150 크레딧이 제출 전에 Billing에 반영된다 (2026-10-28 제출 완료, ~10/30 반영 확인 예정).
-- A4. 심사위원은 앱을 설치하지 않고 데모 영상과 공개 repo로 평가한다 — 그래서 데모 영상이 제품의 1차 증거다.
+- A1. SAM 3.1 provides text-prompt concept segmentation/tracking via the Meta Model API as announced, and the unit-cost premise (images $2.50/1k, video frames $0.20/1k) doesn't change materially.
+- A2. Either the Muse Wonder API preview opens in time, or, if closed, the deterministic-logic fallback keeps the Tooling-score core (SAM + priority judgment).
+- A3. The $150 credit reflects in Billing before submission (submitted 2026-10-28, reflection check ~10/30).
+- A4. Judges evaluate via demo video and public repo without installing the app — so the demo video is the product's primary evidence.
 
-### 10.2 제약
+### 10.2 Constraints
 
-- C1. **기간**: 신규 작업은 2026-10-26 – 11-04 구간 제작분만 제시할 수 있고, 제출 마감은 Nov 4 21:00 ET (= Nov 5 11:00 JST)다.
-- C2. **인력**: 솔로 개발. 키 발급·카드·제출처럼 본인 계정이 필요한 단계는 Jun만 할 수 있어 일정 병목이 된다.
-- C3. **비용**: 강제 지출 상한이 없는 과금 구조 — 클라이언트 지출 가드(F8)가 유일한 물리적 방벽이다.
-- C4. **물리 제약**: SAM 규모상 폰 온디바이스 추론은 불가하고, 카메라는 HTTPS/localhost에서만 동작한다. 라이브 모드는 네트워크 왕복 지연을 안고 간다 (9.2절).
-- C5. **데이터**: 권리 있는 테스트 영상만 쓸 수 있다. 직접 촬영 또는 라이선스 확인된 소스로 한정된다.
+- C1. **Time**: only work produced 2026-10-26 – 11-04 may be presented as new work; submission deadline is Nov 4 21:00 ET (= Nov 5 11:00 JST).
+- C2. **People**: solo developer. Steps needing Jun's own account (key issuance, card, submission) bottleneck the schedule.
+- C3. **Cost**: a billing structure with no enforced spend cap — the client spending guard (F8) is the only physical wall.
+- C4. **Physics**: SAM scale rules out on-device phone inference, and the camera works only on HTTPS/localhost. Live mode carries network round-trip latency (§9.2).
+- C5. **Data**: only test footage with rights may be used — self-shot or license-verified sources only.
 
-### 10.3 리스크
+### 10.3 Risks
 
-| 리스크 | 영향 | 대응 |
+| Risk | Impact | Response |
 | --- | --- | --- |
-| R1. 크레딧 반영 지연 | 실 SAM 측정·평가 규모 축소 | 반영 전에는 스텁으로 전 파이프라인을 검증해 두고, 반영 즉시 실측에 들어간다. 파트너 크레딧은 확인된 것만 예산에 넣는다 |
-| R2. Wonder API 미개방 | Tooling 배점 약화 | 실시간 판정을 결정적 로직으로 유지하고, Wonder 역할 대체 시 Muse Spark를 쓰며 그 사실을 제출 자료에 명시 |
-| R3. API 왕복 지연이 SLO 초과 | 경고가 늦어 제품 가치 자체가 무너짐 | 프레임 크기 축소·주기 조정, 3.0초 유효 기간과 "확인 불가" 표시로 정직하게 처리. 늦은 경고를 내지 않는다 |
-| R4. 위장 패턴 미탐 | 히어로 장면 실패 = 데모 실패 | 프롬프트 조정과 개념별 감지율 공개. 실패 클립을 숨기지 않고 한계로 명시 |
-| R5. "simple image analyzer"로 읽힘 | 룰상 감점·실격 영역 | 전 자료에서 실시간 경고 시스템으로 포지셔닝 (9.8절). 종 판별·이미지 분석 표현을 전면에 두지 않는다 |
-| R6. 권리 없는 데이터 사용 | 실격 사유 | 직접 촬영·라이선스 확인 소스만. `eval/data/SOURCES.md`에 파일별 출처·라이선스를 기록하기 전에는 제출 자료에 쓰지 않는다 |
-| R7. 기간 밖 작업으로 오인 | 기여 식별 불가 시 실격 | 커밋 이력으로 제작 기간을 식별 가능하게 유지하고, 기존 자산(브라우저 API·Meta 모델)과 신규 구현을 문서에서 구분한다 |
-| R8. 금지 카테고리 해당 오인 (의료·건강 조언 등) | 실격 사유 | 안전 조언이 아니라 위험 "경고"로 범위를 고정하고, 건강·의료 조언성 문구를 쓰지 않는다 |
+| R1. Credit reflection delay | Smaller real-SAM measurement/eval scale | Verify the full pipeline on stubs before reflection; start measuring immediately on reflection. Budget only confirmed partner credits |
+| R2. Wonder API unopened | Weaker Tooling score | Keep realtime judgment as deterministic logic; use Muse Spark as the Wonder-role substitute and state so in submission materials |
+| R3. API round-trip latency past SLO | Late warnings collapse product value itself | Shrink frame size / adjust interval; handle honestly with the 3.0s validity window and `"확인 불가"` display. Never emit late alerts |
+| R4. Camouflage-pattern misses | Hero-scene failure = demo failure | Prompt tuning and per-concept detection-rate disclosure. Never hide failure clips; state them as limits |
+| R5. Read as "simple image analyzer" | Rulebook demerit/disqualification territory | Position as a realtime alert system in all materials (§9.8). Don't lead with species-ID / image-analysis framing |
+| R6. Using data without rights | Disqualification cause | Self-shot / license-verified sources only. Never use in submission materials before recording per-file source/license in `eval/data/SOURCES.md` |
+| R7. Mistaken for out-of-window work | Disqualification if contribution is unidentifiable | Keep commit history identifying the production window; distinguish new implementation from existing assets (browser APIs, Meta models) in docs |
+| R8. Mistaken for a banned category (medical/health advice, etc.) | Disqualification cause | Fix scope at hazard "warning," not safety advice; use no health/medical-advisory wording |
 
-## 11. 제출 요구사항 연결 (룰 근거)
+## 11. Submission Requirements Trace (rule basis)
 
-| 룰 (`../files/meta-hackathon-rules.md`) | 제품 대응 |
+| Rule (`../files/meta-hackathon-rules.md`) | Product response |
 | --- | --- |
-| 신규 작업만 (Oct 26 – Nov 4 제작분만 제시) | 전 코드가 기간 내 작성됨. 커밋 이력으로 신규 작업임을 식별 가능하게 유지 |
-| 기여 식별 가능해야 함 (심사위원이 새로 만든 것을 구분 못 하면 실격) | 데모·문서에서 기간 내 제작 범위와 기존 자산(폰 OS, 브라우저 API, Meta 모델)을 구분 표기 |
-| 공개 repo 필수 | 제출 시 repo를 public으로 공개 (9.6절 시크릿 점검 통과 후) |
-| 데모 영상 3분 필수, 주요 심사 항목 | 데모 구성: 문제 제기 0:00–0:30 / 히어로 장면 0:30–1:30 / 라이브 개념 추가 1:30–2:20 / 지표와 구조 2:20–3:00. 히어로 장면을 전반부에 배치 |
-| 권리 없는 코드·데이터·자산 사용 금지 | 테스트 클립은 직접 촬영 또는 라이선스 확인된 영상만 사용. 무단 다운로드 영상 금지 |
-| 테마 적합 (Push the Frontier) | SAM 3을 물리 세계의 새로운 능력(위장 위험 선행 경고)으로 사용함을 데모에서 명시 |
-| 제출 마감 Wed Nov 4 21:00 ET (= Nov 5 11:00 JST), 제출처 포털에 repo+영상 링크+팀원 전원 등록 | 내부 마감은 11-04로 잡아 버퍼 확보 (13절 마일스톤) |
+| New work only (only Oct 26 – Nov 4 production presented) | All code written in-window. Commit history keeps new work identifiable |
+| Contribution must be identifiable (disqualification if judges can't tell what's new) | Demo/docs distinguish in-window production from existing assets (phone OS, browser APIs, Meta models) |
+| Public repo required | Repo goes public at submission (after passing the §9.6 secret sweep) |
+| 3-min demo video required; major judging item | Demo structure: problem 0:00–0:30 / hero scene 0:30–1:30 / live concept add 1:30–2:20 / metrics + structure 2:20–3:00. Hero scene in the first half |
+| No code/data/assets without rights | Test clips are self-shot or license-verified footage only. No unauthorized downloaded footage |
+| Theme fit (Push the Frontier) | Demo states SAM 3 used as a new physical-world capability (camouflaged-hazard advance warning) |
+| Deadline Wed Nov 4 21:00 ET (= Nov 5 11:00 JST); portal submission with repo + video links + all members registered | Internal deadline 11-04 for buffer (§13 milestones) |
 
-## 12. 성공 지표와 측정 계획
+## 12. Success Metrics and Measurement Plan
 
-스펙 방침: **정확도 지표의 목표 수치는 실측 전에 단정하지 않는다.** 첫 측정 결과를 기준선(baseline)으로 삼고, 개선 전후 비교를 제출 자료에 싣는다. (9절의 성능 SLO는 이와 별개의 설계 목표다.)
+Spec policy: **accuracy-metric targets are never asserted before measurement.** The first measurement is the baseline, and before/after improvement comparisons go in submission materials. (§9 performance SLOs are separate design targets.)
 
-| 지표 | 정의 | 성공 기준 |
+| Metric | Definition | Success criterion |
 | --- | --- | --- |
-| 감지율 | 라벨링된 위험 구간 중 경고가 발생한 비율 (개념별 분리) | 히어로 장면(뱀)에서 기준선 확보 후 개선 추이를 제출 자료에 제시. 개념별 수치를 숨기지 않음 |
-| 경고 리드타임 | 위험 도달 시점 대비 첫 경고가 몇 초 먼저 나왔는지 | 양(+)의 리드타임을 히어로 장면에서 실증 (스텁 검증: 도달 전 frame 45에서 경고 발생). 설계 목표로는 히어로 장면 ≥ 2.0초를 지향하되 실측 전 주장은 하지 않음 |
-| 오경보율 | 위험 없는 구간에서 경고가 발생한 빈도 (분당) | 기준선 측정 후 쿨다운·경고 거리 조정으로 개선 전후 비교. 분모 정의는 F9의 알려진 한계 해소 후 확정 |
-| 지연 | 프레임 촬영 → 경고 출력 왕복 시간 분포 | 9.2절 SLO 대비 실측. 측정 체계 구축이 먼저 (아래 측정 계획) |
+| Detection rate | Share of labeled hazard segments where an alert fired (split per concept) | Secure the baseline in the hero scene (snake), then present the improvement trend in submission materials. Never hide per-concept figures |
+| Alert lead time | How many seconds before hazard arrival the first alert fired | Demonstrate positive (+) lead time in the hero scene (stub verification: alert fired at frame 45 before arrival). Aim for hero-scene ≥ 2.0s as a design goal, but claim nothing pre-measurement |
+| False-alarm rate | Alert frequency in hazard-free segments (per minute) | After baseline measurement, before/after comparison via cooldown/alert-distance tuning. Denominator definition finalized after F9's known limitation is resolved |
+| Latency | Frame-shoot → alert-output round-trip distribution | Measured against §9.2 SLOs. Building the measurement rig comes first (measurement plan below) |
 
-**측정 계획**
+**Measurement plan**
 
-- **도구**: `eval/score.py` (감지율·리드타임·오경보율). 지연은 아직 계측 코드가 없다 — 클라이언트 `performance.now()` 계측과 서버 처리 시간 로깅을 실연동 단계에서 추가하는 것이 선행 작업이다.
-- **데이터**: `eval/data/`의 실제 클립 + 파일별 `SOURCES.md`, 라벨 manifest. 라벨은 위험 구간·도달 프레임을 사람이 정한다.
-- **시점**: 1차 기준선 = 실 SAM 연동 직후 (13절 11-01 – 11-02 구간). 조정(프롬프트·쿨다운·경고 거리) 후 2차 측정으로 개선 전후를 만든다.
-- **기록**: 결과 JSON과 측정 조건(모델·프롬프트·클립셋 버전)을 함께 남긴다. 잘 나온 클립만 고르지 않고 실패 클립도 결과에 포함한다.
-- 심사 배점 연결: Impact 30% (가을철 실제 위험, 폰만으로 접근), Use of Meta AI Tooling 25% (SAM 3.1 + Wonder + Spark + Active Memory), Demo 25% (히어로 장면·라이브 개념 추가·지표 제시를 3분에 완결), Technical Depth & Execution 20% (추적·거리 추정·오경보 억제·평가 하네스·폴백).
+- **Tools**: `eval/score.py` (detection rate, lead time, false-alarm rate). No latency instrumentation yet — client `performance.now()` instrumentation and server processing-time logging during the live-integration stage are the prerequisite.
+- **Data**: real clips in `eval/data/` + per-file `SOURCES.md`, label manifest. Humans set hazard segments and arrival frames for labels.
+- **Timing**: first baseline = right after real SAM integration (§13 11-01 – 11-02 window). Tune (prompts, cooldown, alert distances), then measure again for before/after.
+- **Records**: keep result JSON with measurement conditions (model, prompts, clipset version). Never cherry-pick good clips; include failure clips in results.
+- Judging-score mapping: Impact 30% (real autumn hazards, phone-only reach), Use of Meta AI Tooling 25% (SAM 3.1 + Wonder + Spark + Active Memory), Demo 25% (hero scene, live concept add, metric presentation completed in 3 minutes), Technical Depth & Execution 20% (tracking, distance estimation, false-alarm suppression, eval harness, fallbacks).
 
-## 13. 마일스톤 (제출 역산)
+## 13. Milestones (countdown to submission)
 
-| 날짜 (JST) | 목표 | 상태 |
+| Date (JST) | Goal | Status |
 | --- | --- | --- |
-| 10-28 | 스코프 동결·스펙 확정, 스켈레톤+웹앱 스텁, PRD v0.2 | 완료 (스텁 수준) |
-| 10-29 – 10-31 | API 키 수령 즉시 실 SAM 연동 (실제 프레임 전송 포함), 녹화 영상 파이프라인 end-to-end, 테스트 클립 라벨링 + `SOURCES.md` 정리, 지연 계측 추가 | 예정 |
-| 11-01 – 11-02 | 폰 라이브 모드 실기기 확인, 평가 하네스 1차 기준선 측정 (지표를 숫자로) | 예정 |
-| 11-03 | 데모 촬영·편집 (3분 구성표대로), 지표 확정, repo public 전환 + 시크릿 점검 (9.6절 게이트) | 예정 |
-| 11-04 | 제출 자료 마감·제출, 크레딧 클레임 마감 (21:00 ET) 확인 | 예정 |
-| 11-05 11:00 | 공식 제출 마감 (Nov 4 21:00 ET) | — |
+| 10-28 | Scope freeze + spec finalized, skeleton + webapp stub, PRD v0.2 | Done (stub level) |
+| 10-29 – 10-31 | Real SAM integration immediately on API key receipt (incl. real frame upload), recorded-video pipeline end-to-end, test-clip labeling + `SOURCES.md` cleanup, latency instrumentation | Scheduled |
+| 11-01 – 11-02 | Phone live-mode real-device check, eval harness first-baseline measurement (numbers for metrics) | Scheduled |
+| 11-03 | Demo shoot/edit (per 3-min structure), metrics finalized, repo public switch + secret sweep (§9.6 gate) | Scheduled |
+| 11-04 | Submission materials deadline + submit, credit claim deadline (21:00 ET) check | Scheduled |
+| 11-05 11:00 | Official submission deadline (Nov 4 21:00 ET) | — |
 
-## 14. 변경 이력
+## 14. Change History
 
-| 버전 | 날짜 | 변경 |
+| Version | Date | Change |
 | --- | --- | --- |
-| v0.1 | 2026-10-28 | 초안 — 제품 개요, 시나리오, 기능 정의 F1–F11, 비기능 요구(서술형), 제출 연결, 성공 지표 |
-| v0.2 | 2026-10-28 | 업계 표준 PRD 구조로 확장 — 문서 메타(목적·독자·유지 규칙·우선순위·용어·관련 문서), 문제 정의와 배경, 목표와 비목표, 이해관계자, 가정·제약·리스크 신설. 비기능 요구를 정량 SLO 표로 전환 (지연 예산 분해, 신뢰성 실패 동작, 비용 상한, 보안, 호환성 매트릭스, 접근성·안전 고지 — 각 항목에 요구/목표/측정 방법/미달 시 대응/현재 상태). 측정 계획과 마일스톤, 변경 이력 신설. 코드 대조에서 발견한 불일치 3건을 본문에 반영 (F3 프레임-시간 모델, F9 오경보율 분모와 eval/data 출처 기록 부재, 9.8 화면 안전 고지 부재) |
-| v0.3 | 2026-10-31 | Meta Model API 연결 상태 정정 — credential은 Secure Vault connection에만 두고 project server가 직접 읽지 않도록 보안 구조를 변경. 공식 페이지에서 확인된 SAM 모델·기능·가격과 미확인인 endpoint/schema를 분리하고, `RealSAMClient`의 기본 비활성 adapter 상태를 F2와 비용 상태에 반영. 크레딧 반영 확인 또는 유료 smoke test 승인 전 실호출 금지를 명시 |
-| v0.4 | 2026-10-31 | F1 라이브 연결 완료 — 웹앱 실프레임 전송, 서버 opt-in 라이브 모드(`TRAIL_SENTINEL_LIVE=1`), 개념별 병렬 호출·최소 간격 2.5초·호출당 타임아웃 10초, 프론트 "확인 불가" 상태, 마스크 PNG 오버레이, 라이브 접근 속도 벽시계 환산. F1/F2/F3/9.2/9.4/9.5 현재 상태를 실측 기준으로 갱신 (스캔 지연 6.1초 실측 포함, 경고 유효 기간 3.0초는 미구현으로 명시) |
-| v0.5 | 2026-10-31 | F7(음성·텍스트 실시간 커스텀 위험 개념 추가 `POST /api/concepts`), 9.2절 클라이언트 왕복 계측 및 3.0초 경고 유효 기간(`ALERT_VALIDITY_MS`) 적용, F9 `eval/score.py` 오경보율 분모(무위험 클립 분 기준) 통일, 모바일 풀스크린 전술 HUD 개편 및 해커톤 요구사항 준수 감사 문서(`HACKATHON_REQUIREMENTS.md`) 추가 |
+| v0.1 | 2026-10-28 | Draft — product overview, scenarios, feature definitions F1–F11, non-functional requirements (prose), submission trace, success metrics |
+| v0.2 | 2026-10-28 | Expanded to industry-standard PRD structure — new doc meta (purpose, audience, maintenance rules, precedence, definitions, related docs), problem definition and background, goals and non-goals, stakeholders, assumptions/constraints/risks. Non-functional requirements converted to quantitative SLO tables (latency budget breakdown, reliability failure behavior, cost cap, security, compatibility matrix, accessibility/safety notice — each with requirement/target/measurement/below-target-response/current-status). New measurement plan, milestones, change history. Folded in 3 inconsistencies found by code cross-check (F3 frame-time model, F9 false-alarm-rate denominator and missing eval/data source records, §9.8 missing on-screen safety notice) |
+| v0.3 | 2026-10-31 | Corrected Meta Model API connection status — credentials stay only in the Secure Vault connection; project server no longer reads them directly. Separated officially confirmed SAM models/features/pricing from unconfirmed endpoint/schema, and reflected `RealSAMClient`'s default-inactive adapter state in F2 and cost status. Stated no real calls before credit-reflection confirmation or paid smoke-test approval |
+| v0.4 | 2026-10-31 | F1 live wiring complete — webapp real-frame upload, server opt-in live mode (`TRAIL_SENTINEL_LIVE=1`), per-concept parallel calls, 2.5s minimum interval, 10s per-call timeout, frontend `"확인 불가"` state, mask PNG overlay, live approach-speed wall-clock conversion. Updated F1/F2/F3/9.2/9.4/9.5 current status from measurements (incl. 6.1s measured scan latency; 3.0s alert validity window explicitly unimplemented) |
+| v0.5 | 2026-10-31 | F7 (voice/text realtime custom hazard-concept add `POST /api/concepts`), §9.2 client round-trip instrumentation and 3.0s alert validity window (`ALERT_VALIDITY_MS`), F9 `eval/score.py` false-alarm-rate denominator unification (hazard-free clip minutes basis), mobile fullscreen tactical HUD revamp, and hackathon requirements compliance audit doc (`HACKATHON_REQUIREMENTS.md`) |

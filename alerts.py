@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from .triage import AlertDecision
+from triage import AlertDecision
 
 
 @dataclass

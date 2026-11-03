@@ -7,8 +7,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from trail_sentinel.config import CallBudget
-from trail_sentinel.sam_client import (
+from config import CallBudget
+from sam_client import (
     BudgetNotConfiguredError,
     LiveInferenceDisabledError,
     RealSAMClient,

@@ -1,52 +1,52 @@
-# 04. 참가 지원서 작성 가이드 및 영문 모범 답안 초안 (Application Guide)
+# 04. Application Guide and Draft Model Answers (Application Guide)
 
-> **지원 링크**: <https://cerebralvalley.ai/e/meta-ai-developer-hackathon/apply>
-> **지원 마감**: **2026년 10월 25일 11:59 PM ET (한국 시간 2026년 10월 26일 월요일 낮 12:59 KST)**
-> *(단, 20,000명 정원이 차면 마감일 이전이라도 즉시 조기 마감되므로 가능한 한 빨리 제출하시는 것을 권장합니다!)*
-
----
-
-## 1. 지원서 자동 합격(Rolling Acceptance) 전략 요약
-
-메인 페이지 및 메타데이터(`applicationLanguagePreference: "en-US"`)에서 확인된 심사 원칙:
-1. **오직 2개 핵심 기준(50% : 50%)으로만 채점**:
-   - **Q8 (`What do you want to build for this hackathon?`) — 50%**: 제안하는 프로젝트 아이디어가 얼마나 **명확하고 실현 가능한지(clear and feasible)**, 그리고 **두 가지 프로젝트 테마(`Build for Your World` / `Push the Frontier`) 중 하나에 얼마나 잘 부합하는지**, 또 Meta의 신규 모델들(`Muse Wonder`, `Muse Spark 1.3`, `Muse Image`, `SAM 3.1`, `Muse Voice Transcribe`, `Muse Glimmer`)을 어떻게 구체적으로 활용하는지.
-   - **Q9 (`Tell us about an AI project you recently built that showcases your technical skills.`) — 50%**: 최근 직접 만든 AI 프로젝트에서 **무엇을 만들었는지(what you built)**와 **구체적으로 어떤 기술/알고리즘/기법을 사용했는지(the techniques you used)**.
-2. **최소 점수 커트라인 통과 시 즉시 합격**:
-   - 롤링 베이스로 채점되며, 최소 점수 커트라인을 넘기면 20,000명 한도 내에서 자동 승인됩니다.
-   - 따라서 추상적인 미사여구 대신 **모델명, 알고리즘, 파이프라인 구조, 정량적 지표**를 영문으로 명확히 적어주는 것이 핵심입니다.
+> **Application link**: <https://cerebralvalley.ai/e/meta-ai-developer-hackathon/apply>
+> **Application deadline**: **11:59 PM ET, October 25, 2026 (12:59 PM KST, Monday, October 26, 2026)**
+> *(However, applications close immediately once the 20,000-applicant cap is reached, even before the deadline — so submitting as early as possible is strongly recommended!)*
 
 ---
 
-## 2. 문항별 입력 가이드 (Q0 ~ Q14 전체)
+## 1. Auto-Acceptance (Rolling Acceptance) Strategy Summary
 
-| 문항 번호 | 질문 원문 | 권장 입력 내용 |
+Judging principles confirmed from the main page and metadata (`applicationLanguagePreference: "en-US"`):
+1. **Scored on only 2 core criteria (50% : 50%)**:
+   - **Q8 (`What do you want to build for this hackathon?`) — 50%**: how **clear and feasible** the proposed project idea is, how well it fits one of the two project themes (`Build for Your World` / `Push the Frontier`), and how specifically it uses Meta's new models (`Muse Wonder`, `Muse Spark 1.3`, `Muse Image`, `SAM 3.1`, `Muse Voice Transcribe`, `Muse Glimmer`).
+   - **Q9 (`Tell us about an AI project you recently built that showcases your technical skills.`) — 50%**: **what you built** in a recent AI project you made yourself and **the specific techniques you used**.
+2. **Instant acceptance once the minimum score cutoff is passed**:
+   - Scored on a rolling basis; applicants above the minimum score cutoff are automatically accepted within the 20,000-applicant limit.
+   - So instead of abstract embellishments, the key is to clearly write **model names, algorithms, pipeline structure, and quantitative metrics** in English.
+
+---
+
+## 2. Per-Question Input Guide (All of Q0–Q14)
+
+| Question No. | Original Question | Recommended Input |
 | :---: | :--- | :--- |
-| **Q0** | `What's your LinkedIn?` *(필수)* | 본인 LinkedIn 프로필 URL |
-| **Q1** | `What's your Twitter/X?` *(선택)* | 본인 X(Twitter) 프로필 URL (없으면 비워둠) |
-| **Q2** | `What's your Github?` *(선택이나 강력 권장)* | 본인 GitHub 프로필 또는 `lottie-motion-studio` 저장소 URL *(심사 기준에 "Links to your GitHub, LinkedIn or a shipped product help us verify your experience and skill" 명시)* |
-| **Q3** | `Where do you live (City, State, Country)?` *(필수)* | 예: `Seoul, South Korea` (또는 현재 거주 도시/국가) |
-| **Q4** | `Are you applying for the startup track or indie dev track?` *(필수)* | 개인/소규모 빌더 자격이면 **`Indie Dev Track`**, 법인(Buddypia 등) 대표/창업자 자격이면 **`Startup Track`** 선택 *(해커톤 기간 중 언제든 변경 가능)* |
-| **Q5** | `Where do you study or work?` *(Indie 선택 시)* | 소속 회사명(예: `Buddypia`) 또는 소속/직함 |
-| **Q6** | `What country is your company incorporated in?` *(Startup 선택 시)* | 예: `South Korea` (또는 법인 설립 국가) |
-| **Q7** | `What round of funding are you?` *(Startup 선택 시)* | `Bootstrapped`, `Pre-Seed`, `Seed` 등 해당 단계 선택 |
-| **Q8** | **`What do you want to build for this hackathon?`** *(필수, 배점 50%)* | **아래 §3의 영문 초안(Option A1 / A2 / A3 중 택1) 복사·활용** |
-| **Q9** | **`Tell us about an AI project you recently built that showcases your technical skills.`** *(필수, 배점 50%)* | **아래 §4의 `Lottie Motion Studio` 기술 요약 영문 초안 복사·활용** |
-| **Q10** | `Have you used Meta Model API before?` *(필수)* | `Yes` 또는 `No` (솔직하게 선택; 선발 당락과 무관) |
-| **Q11** | `How likely are you to build with Meta Model API?` *(필수)* | **`Very likely`** |
-| **Q12** | `How would you describe your overall opinion of Meta Model API?` *(필수)* | **`Very favorable`** |
-| **Q13** | `How did you hear about this hackathon?` *(필수)* | 예: `Cerebral Valley / Meta AI Developer Portal` |
-| **Q14** | `By selecting Yes, you agree to receive marketing...` *(필수)* | `Yes` 또는 `No` |
+| **Q0** | `What's your LinkedIn?` *(required)* | Your LinkedIn profile URL |
+| **Q1** | `What's your Twitter/X?` *(optional)* | Your X (Twitter) profile URL (leave blank if none) |
+| **Q2** | `What's your Github?` *(optional but strongly recommended)* | Your GitHub profile or the `lottie-motion-studio` repository URL *(the judging criteria state: "Links to your GitHub, LinkedIn or a shipped product help us verify your experience and skill")* |
+| **Q3** | `Where do you live (City, State, Country)?` *(required)* | E.g., `Seoul, South Korea` (or your current city/country of residence) |
+| **Q4** | `Are you applying for the startup track or indie dev track?` *(required)* | Choose **`Indie Dev Track`** if applying as an individual/small builder, or **`Startup Track`** if applying as a corporate (e.g., Buddypia) founder/representative *(changeable at any time during the hackathon)* |
+| **Q5** | `Where do you study or work?` *(if Indie selected)* | Company name (e.g., `Buddypia`) or affiliation/title |
+| **Q6** | `What country is your company incorporated in?` *(if Startup selected)* | E.g., `South Korea` (or country of incorporation) |
+| **Q7** | `What round of funding are you?` *(if Startup selected)* | Select the applicable stage: `Bootstrapped`, `Pre-Seed`, `Seed`, etc. |
+| **Q8** | **`What do you want to build for this hackathon?`** *(required, 50% of score)* | **Copy and use the English draft below in §3 (choose one of Option A1 / A2 / A3)** |
+| **Q9** | **`Tell us about an AI project you recently built that showcases your technical skills.`** *(required, 50% of score)* | **Copy and use the `Lottie Motion Studio` technical summary English draft below in §4** |
+| **Q10** | `Have you used Meta Model API before?` *(required)* | `Yes` or `No` (answer honestly; does not affect selection) |
+| **Q11** | `How likely are you to build with Meta Model API?` *(required)* | **`Very likely`** |
+| **Q12** | `How would you describe your overall opinion of Meta Model API?` *(required)* | **`Very favorable`** |
+| **Q13** | `How did you hear about this hackathon?` *(required)* | E.g., `Cerebral Valley / Meta AI Developer Portal` |
+| **Q14** | `By selecting Yes, you agree to receive marketing...` *(required)* | `Yes` or `No` |
 
 ---
 
-## 3. [Q8 모범 답안 초안] `What do you want to build for this hackathon?`
+## 3. [Q8 Model Answer Draft] `What do you want to build for this hackathon?`
 
-> 지원서 제출 후에도 실제 해커톤 중에 세부 구현 방향을 발전시킬 수 있으므로, 가장 설득력 있고 구체적인 아키텍처가 드러나는 **Option A1 (MuseMotion Studio 2.0)** 또는 **Option A2 (KineticLottie)**를 추천합니다.
+> Since implementation details can still evolve during the actual hackathon after submitting the application, **Option A1 (MuseMotion Studio 2.0)** or **Option A2 (KineticLottie)** — which reveal the most convincing and concrete architecture — is recommended.
 
-### Option A1 (최우선 추천 — MuseMotion Studio 2.0: 멀티에이전트 2D 캐릭터 생성·분할·60FPS Lottie 컴파일러)
+### Option A1 (Top recommendation — MuseMotion Studio 2.0: multi-agent 2D character generation, segmentation, and 60FPS Lottie compiler)
 
-**복사용 영문 초안 (English):**
+**Copy-ready English draft (English):**
 ```text
 Theme: Build for Your World & Push the Frontier
 
@@ -62,13 +62,13 @@ How I will build it using Meta's newest models:
 5. On-Device Agentic Fallback (Muse Glimmer 30B): Run Muse Glimmer locally alongside WebGPU inference for zero-latency offline motion timeline synthesis.
 ```
 
-*(한국어 의미 요약: 무거운 MP4 비디오 대신 웹/모바일/Flutter 프로덕션에 즉시 투입 가능한 50KB 미만 60FPS Lottie 애니메이션을 자율 생성하는 `MuseMotion Studio`를 구축합니다. `Muse Image`로 캐릭터 생성 및 가려진 몸통/배경 아모달 인페인팅을 수행하고, `SAM 3.1`로 신체 부위·소품 정밀 분할 및 실사 비디오 모션 리타겟팅을 수행하며, `Muse Wonder / Spark 1.3`가 7컬럼 검증 시트를 시각 감사하여 관절 틈새를 자가 수리하고, `Muse Voice Transcribe`로 실시간 음성 디렉팅을 구현합니다.)*
+*(Meaning summary: building `MuseMotion Studio`, which autonomously generates sub-50KB 60FPS Lottie animations ready for immediate production use in web/mobile/Flutter instead of heavy MP4 video. `Muse Image` performs character generation and occluded-torso/background amodal inpainting, `SAM 3.1` performs precise body-part/prop segmentation and real-video motion retargeting, `Muse Wonder / Spark 1.3` visually audits the 7-column verification sheet to self-heal joint gaps, and `Muse Voice Transcribe` implements realtime voice directing.)*
 
 ---
 
-### Option A2 (대안 — KineticLottie: 실사 비디오 동작을 20KB 60FPS 2D Lottie로 변환하는 모션 컴파일러)
+### Option A2 (Alternative — KineticLottie: motion compiler converting real-video motion into 20KB 60FPS 2D Lottie)
 
-**복사용 영문 초안 (English):**
+**Copy-ready English draft (English):**
 ```text
 Theme: Push the Frontier & Build for Your World
 
@@ -83,11 +83,11 @@ How it works with Meta Model API:
 
 ---
 
-## 4. [Q9 모범 답안 초안] `Tell us about an AI project you recently built that showcases your technical skills.`
+## 4. [Q9 Model Answer Draft] `Tell us about an AI project you recently built that showcases your technical skills.`
 
-> **핵심 포인트**: 심사위원이 읽자마자 *"이 지원자는 실제 컴퓨터 비전, 기하학적 수학, 온디바이스 ML, 풀스택 모션 컴파일러를 직접 밑바닥부터 구현하고 출시한 최상급 엔지니어다"*라고 확신할 수 있도록, `lottie-motion-studio`에 실제로 구현되어 있는 핵심 기술과 알고리즘 명칭을 정확히 담았습니다.
+> **Key point**: written with the exact names of the core technologies and algorithms actually implemented in `lottie-motion-studio`, so that judges instantly conclude *"this applicant is a top-tier engineer who built and shipped real computer vision, geometric math, on-device ML, and a full-stack motion compiler from the ground up."*
 
-**복사용 영문 초안 (English):**
+**Copy-ready English draft (English):**
 ```text
 I built Lottie Motion Studio, an end-to-end AI character decomposition, skeletal rigging, and procedural animation workbench that converts a single static 2D illustration into a production-ready 60FPS Bodymovin Lottie JSON and cross-platform Flutter animation.
 
@@ -105,4 +105,4 @@ Key techniques and engineering systems I designed and implemented:
    - Engineered a deterministic verification pipeline that renders a 1920px 7-column contact sheet auditing background ghost leaks, joint socket integrity, and grounded foot anchors across extreme motion phases, backed by an automated pytest + Flutter byte-parsing quality gate.
 ```
 
-*(한국어 의미 요약: 단일 2D 일러스트를 상용 60FPS Lottie JSON 및 Flutter 애니메이션으로 변환하는 `Lottie Motion Studio`를 직접 설계·구축했습니다. ① 적응형 마팅과 외곽선 셀 다수결 기반의 Zero-Box 7레이어 유기적 파츠 분할, ② $\pm 45^\circ$ 회전 시 0px 틈새를 보장하는 볼록 관절 소켓 기하학, FFC/Navier-Stokes 아모달 인페인팅, 전경 소품 `__backfill` 이중 레이어 합성 및 알파 피라미드 디프린징, ③ 골반 허브(`pelvis`) 아래 상완/전완·허벅지/종아리/발목 2단 분할 및 2-Bone IK 보행 역기구학(힐스트라이크~토오프 발 구름, 척추/목 위상 지연 흔들림 보정) Lottie 컴파일러, ④ EmbeddingGemma 2 및 WebGPU 기반 20~45ms 초저지연 자연어 모션 결정 엔진(Choice & Score 프리미티브) 및 래칫 평가 하니스, ⑤ 1920px 7컬럼 검증 컨택트 시트 및 pytest/Flutter 통합 품질 게이트를 구현했습니다.)*
+*(Meaning summary: designed and built `Lottie Motion Studio` from scratch, which converts a single 2D illustration into commercial 60FPS Lottie JSON and Flutter animations. Implemented: ① Zero-Box 7-layer organic part segmentation based on adaptive matting and outline-cell majority voting, ② convex joint-socket geometry guaranteeing 0px gaps under $\pm 45^\circ$ rotation, FFC/Navier-Stokes amodal inpainting, foreground-prop `__backfill` dual-layer compositing, and alpha-pyramid defringing, ③ a Lottie compiler with upper-arm/forearm and thigh/shin/ankle 2-segment splits under a `pelvis` hub plus 2-bone IK walking kinematics (heel-strike-to-toe-off foot roll, phase-lagged spine/neck sway correction), ④ a 20–45ms ultra-low-latency natural-language motion decision engine (Choice & Score primitives) based on EmbeddingGemma 2 and WebGPU plus a ratchet evaluation harness, and ⑤ a 1920px 7-column verification contact sheet with a pytest/Flutter integration quality gate.)*

@@ -18,7 +18,7 @@ No extra hardware and no native app installation required: it runs directly in a
 | :--- | :--- |
 | [`server.py`](./server.py) | Zero-dependency Python HTTP backend (`/api/status`, `/api/scan`, `/api/concepts`) |
 | [`webapp/`](./webapp/) | Responsive optical HUD (`index.html`, `app.js`, `style.css`, `videos/`) |
-| [`trail_sentinel/`](./trail_sentinel/) | Core package (`config.py`, `vision_router.py`, `triage.py`, `sam_client.py`, `meta_transport.py`) |
+| Root `.py` modules (`config.py`, `vision_router.py`, `triage.py`, `sam_client.py`, `meta_transport.py`, `pipeline.py`, `alerts.py`) | Core backend modules (flat layout, no package dir) |
 | [`tests/`](./tests/) | Offline unit test suite (`unittest`) |
 | [`eval/`](./eval/) | Scoring harness (`score.py`) and media license ledger (`data/SOURCES.md`) |
 | [`FEATURE_MAP.md`](./FEATURE_MAP.md) | Full-stack feature index (`[FEAT:F1]`–`[FEAT:F12]`) and file/symbol reference map |
@@ -42,12 +42,12 @@ Built for the **Meta Global AI Developer Hackathon** (Cerebral Valley) · **Indi
 | ID | Capability | Status | Implementation Highlights |
 | :---: | :--- | :---: | :--- |
 | **`F1`** | **Live Camera Scan** | ✅ Built | Captures live WebRTC camera frames (`webapp/app.js` → `POST /api/scan`) with rate-limiting and 10s timeout guardrails (`server.py`). |
-| **`F2`** | **Meta AI Multi-Model Switcher & SAM 3.1 Segmentation** | ✅ Built | Switch in real time between `SAM 3.1 + Muse Spark 1.3 (Hybrid Seg + Verify)`, `Meta Muse Spark 1.3`, `Meta Muse Wonder 1.0`, `Meta Muse Glimmer 30B`, and pure `Meta SAM 3.1` (`trail_sentinel/vision_router.py`, `sam_client.py`, `meta_transport.py`). |
+| **`F2`** | **Meta AI Multi-Model Switcher & SAM 3.1 Segmentation** | ✅ Built | Switch in real time between `SAM 3.1 + Muse Spark 1.3 (Hybrid Seg + Verify)`, `Meta Muse Spark 1.3`, `Meta Muse Wonder 1.0`, `Meta Muse Glimmer 30B`, and pure `Meta SAM 3.1` (`vision_router.py`, `sam_client.py`, `meta_transport.py`). |
 | **`F3`** | **Distance & Clock-Bearing Estimation + 4-KPI Strip** | ✅ Built | Ground-plane + bounding-box visual distance heuristic (`estimate_visual_distance_m`, `ground_plane_distance_estimator`) and clock-face bearing (`11` / `12` / `1 o'clock`). |
-| **`F4`** | **Priority Triage (Muse Wonder Role)** | ✅ Built | Deterministic severity × proximity + approach speed scoring (`trail_sentinel/triage.py`) with severity-gated alert radii (`3.0m` / `2.5m` / `1.0m`) and 3.0s per-track anti-chatter cooldown. |
+| **`F4`** | **Priority Triage (Muse Wonder Role)** | ✅ Built | Deterministic severity × proximity + approach speed scoring (`triage.py`) with severity-gated alert radii (`3.0m` / `2.5m` / `1.0m`) and 3.0s per-track anti-chatter cooldown. |
 | **`F5`** | **Localized Voice Alerts (TTS), Haptics & Optical HUD** | ✅ Built | Pixel mask overlay + corner-bracket bounding boxes on HTML5 Canvas, Web Speech API (`speechSynthesis`) voice warnings, and mobile `navigator.vibrate` patterns. |
 | **`F6`** | **Hero Demo Replay & Honesty Badges** | ✅ Built | Replays recorded fixture frames `0..60` (`fixtures/hero_snake_leaves.json`) with explicit `#demoBadge` and `#unknownBadge` latency/failure indicators. |
-| **`F7`** | **Zero-Retraining Custom Hazard Concepts** | ✅ Built | Add new trail hazards on the fly via text or Web Speech API voice input (`POST /api/concepts` → `register_custom_hazard` in `trail_sentinel/config.py`). |
+| **`F7`** | **Zero-Retraining Custom Hazard Concepts** | ✅ Built | Add new trail hazards on the fly via text or Web Speech API voice input (`POST /api/concepts` → `register_custom_hazard` in `config.py`). |
 | **`F8`** | **Daily Call Budget Guard (`CallBudget`)** | ✅ Built | Atomic JSON counter (`CallBudget`, default `DAILY_CALL_CAP=200` calls/day) prevents accidental API overspend before any provider request is sent. |
 | **`F9`** | **Evaluation Harness & Rights-Cleared Media** | ✅ Built | Reproducible scoring script (`eval/score.py`) measuring detection rate, warning lead time, and false-alarm rate; all media sources and open licenses documented in `eval/data/SOURCES.md`. |
 | **`F10`** | **Multi-Language i18n (`EN` / `KO` / `JA`)** | ✅ Built | **English (`en`) default** across backend, CLI, API, and UI; automatic Browser/OS locale detection (`en`, `ko`, `ja`); instant UI switcher (`#langSelect`) and localized TTS. |
@@ -60,7 +60,7 @@ Built for the **Meta Global AI Developer Hackathon** (Cerebral Valley) · **Indi
 
 Trail Sentinel uses **English (`en`)** as its universal default across the backend, CLI, API responses, and documentation, while providing full first-class support for **English (`en`)**, **Korean (`ko`)**, and **Japanese (`ja`)**:
 
-1. **Default Language (`en`)**: All backend modules (`trail_sentinel/triage.py`, `trail_sentinel/config.py`, `server.py`, `main.py`) and static HTML (`webapp/index.html`) default to English.
+1. **Default Language (`en`)**: All backend modules (`triage.py`, `config.py`, `server.py`, `main.py`) and static HTML (`webapp/index.html`) default to English.
 2. **Automatic Browser & OS Detection**: On initial load, the web app inspects:
    - Explicit URL parameter (`?lang=en`, `?lang=ko`, `?lang=ja`)
    - Saved user preference in `localStorage` (`trail_sentinel_lang`)
@@ -123,18 +123,18 @@ Browser HUD (webapp/index.html, app.js, style.css)
         ▼  POST /api/scan  |  POST /api/concepts  |  GET /api/status
 Backend Server (server.py — Python stdlib only)
   ├─ CallBudget (.call_counter.json, 200 calls/day cap)
-  ├─ LiveScanner (trail_sentinel/vision_router.py, sam_client.py, meta_transport.py)
+  ├─ LiveScanner (vision_router.py, sam_client.py, meta_transport.py)
   │    ├─ Single-pass Hybrid Segmentation + Semantic Verification (SAM 3.1 + Muse Spark / Wonder / Glimmer)
   │    └─ Pure SAM 3.1 per-concept connector subprocess (Meta Model API /v1/responses)
   ├─ Distance & Bearing Estimator (ground_plane_distance_estimator / estimate_visual_distance_m)
-  └─ Priority Triage (trail_sentinel/triage.py: severity × proximity + approach speed, 3s cooldown)
+  └─ Priority Triage (triage.py: severity × proximity + approach speed, 3s cooldown)
        └─ Emits localized alert payload:
           • EN: "Underfoot ahead, 3 meters, Snake"
           • KO: "발 앞 3미터, 뱀"
           • JA: "足元前方 3メートル、ヘビ"
 ```
 
-### Baseline Hazard Concepts (`trail_sentinel/config.py`)
+### Baseline Hazard Concepts (`config.py`)
 
 | Key | English (`en`) | Korean (`ko`) | Japanese (`ja`) | Zone | Severity | Default Prompt |
 | :--- | :--- | :--- | :--- | :---: | :---: | :--- |

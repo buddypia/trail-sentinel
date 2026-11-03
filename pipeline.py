@@ -6,10 +6,10 @@ are sampled and sent to SAM 3.1.
 """
 from __future__ import annotations
 
-from .alerts import EmittedAlert, emit
-from .config import CallBudget
-from .sam_client import Detection, SAMClient
-from .triage import COOLDOWN_FRAMES, evaluate
+from alerts import EmittedAlert, emit
+from config import CallBudget
+from sam_client import Detection, SAMClient
+from triage import COOLDOWN_FRAMES, evaluate
 
 
 def run_pipeline(scene: str, sam: SAMClient, budget: CallBudget | None = None,

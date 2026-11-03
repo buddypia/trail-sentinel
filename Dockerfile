@@ -10,7 +10,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     CALL_COUNTER_FILE=/tmp/.call_counter.json
 
 COPY server.py main.py ./
-COPY trail_sentinel ./trail_sentinel
+COPY alerts.py config.py meta_transport.py pipeline.py sam_client.py triage.py vision_router.py ./
 COPY webapp ./webapp
 COPY fixtures ./fixtures
 COPY eval/data/hero_snake_leaves_01.jpg ./eval/data/hero_snake_leaves_01.jpg

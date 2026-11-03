@@ -12,9 +12,9 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from trail_sentinel.config import CallBudget
-from trail_sentinel.pipeline import run_pipeline
-from trail_sentinel.sam_client import StubSAMClient
+from config import CallBudget
+from pipeline import run_pipeline
+from sam_client import StubSAMClient
 
 ROOT = Path(__file__).parent
 
