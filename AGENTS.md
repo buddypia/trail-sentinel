@@ -1,20 +1,21 @@
-# AGENTS.md — Trail Sentinel
+# AGENTS.md — Meta Global AI Developer Hackathon & Trail Sentinel
 
 > **機能別の実装箇所・逆引きレシピは [`FEATURE_MAP.md`](./FEATURE_MAP.md) を最初に参照すること。**
 > コード内の `[FEAT:F1]`〜`[FEAT:F12]` タグを `rg -n "\[FEAT:" .` で検索すると 1秒で該当行へ移動できる。
 
 **概要**: スマホカメラ（または検証動画）で登山道を連続スキャンし、Meta SAM 3.1（テキストプロンプト概念分割）＋ Muse（意味検証・優先度トリアージ）で危険を検知、危険半径に入った時だけ 3言語（EN/JA/KO）の音声＋振動で警告するリアルタイム登山道危険検知 HUD。Meta Global AI Developer Hackathon（Indie Track / Push the Frontier）、提出締切 **2026-11-05 11:00 JST**。
 
-## 1. ドキュメント地図（優先順位: ルール > PRD > TECH）
+## 1. ワークスペース構成（どこに何があるか）
 
 | 目的 | ファイル |
 | :--- | :--- |
 | **どの機能をどこで直すか（機能ID・関数・DOM ID・逆引きレシピ）** | **[`FEATURE_MAP.md`](./FEATURE_MAP.md)** |
-| ハッカソン必須要件・失格防止・適合監査チェックリスト | [`HACKATHON_REQUIREMENTS.md`](./HACKATHON_REQUIREMENTS.md) |
-| 製品要件・スコープ・SLO (F1–F11) | [`PRD.md`](./PRD.md) |
-| 技術選定・アーキテクチャ詳細 | [`TECH.md`](./TECH.md) |
-| ローカル実行・Cloud Run / トンネル公開手順 | [`README.md`](./README.md), [`DEPLOY.md`](./DEPLOY.md) |
-| 検証動画アセット（結合版・トップ画面デモ） | [`webapp/videos/`](./webapp/videos/) |
+| アプリ本体（Webバックエンド・HUD・コアパッケージ・CLI） | `server.py`, `webapp/`, `trail_sentinel/`, `main.py` |
+| 単体テスト・評価ハーネス・ライセンス台帳 | `tests/`, `eval/score.py`, `eval/data/SOURCES.md` |
+| 製品要件・技術選定・適合要件・デプロイ手順 | `PRD.md`, `TECH.md`, `HACKATHON_REQUIREMENTS.md`, `DEPLOY.md` |
+| ハッカソン公式ルール・賞金配分(`01`)、Meta AI 新モデル仕様(`02`)、アイデア提案(`03`)、応募回答(`04`)、適合監査レポート(`05`) | [`docs/`](./docs/README.md) |
+| 検証動画マスター（`individual/01..08` 個別8本、結合版 `hazard_verification_combined*.mp4`、トップ画面デモ `hero_how_it_works.mp4`） | [`videos/`](./videos/README.md) |
+| Web配信用圧縮動画（`webapp/` から相対参照） | `webapp/videos/` |
 
 ## 2. 機能ID クイックサマリー (`F1`〜`F12`)
 

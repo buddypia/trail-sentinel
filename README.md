@@ -1,4 +1,7 @@
-# Trail Sentinel
+# Trail Sentinel — Meta Global AI Developer Hackathon
+
+**Real-Time Optical Trail Hazard Segmentation, Semantic Verification, and Proactive Voice Triage HUD**
+Built with **Meta SAM 3.1** and the **Meta Muse** multimodal family (`Muse Spark 1.3`, `Muse Wonder 1.0`, `Muse Glimmer 30B`) for the **Meta Global AI Developer Hackathon** (Indie Track · *Push the Frontier*).
 
 **A real-time, proactive optical HUD and voice warning system for trail hazards.**
 Walk with your phone camera pointed at the path ahead—or run the built-in multi-hazard verification videos directly in your browser. Trail Sentinel continuously scans frames, segments prompt-defined hazards at the pixel level with **Meta SAM 3.1** and the **Meta Muse** multimodal family, tracks them across frames, ranks them by **severity × proximity × approach speed**, and—only when a hazard enters the danger radius—triggers an immediate directional voice alert and haptic vibration.
@@ -6,6 +9,21 @@ Walk with your phone camera pointed at the path ahead—or run the built-in mult
 No extra hardware and no native app installation required: it runs directly in any desktop or mobile browser.
 
 > **Safety Positioning:** Trail Sentinel is an **assistive tool, not a safety guarantee**. False positives or missed detections can occur depending on lighting, camouflage, and network latency. Always watch the trail with your own eyes.
+
+---
+
+## Repository Structure
+
+| Path | Description |
+| :--- | :--- |
+| [`server.py`](./server.py) | Zero-dependency Python HTTP backend (`/api/status`, `/api/scan`, `/api/concepts`) |
+| [`webapp/`](./webapp/) | Responsive optical HUD (`index.html`, `app.js`, `style.css`, `videos/`) |
+| [`trail_sentinel/`](./trail_sentinel/) | Core package (`config.py`, `vision_router.py`, `triage.py`, `sam_client.py`, `meta_transport.py`) |
+| [`tests/`](./tests/) | Offline unit test suite (`unittest`) |
+| [`eval/`](./eval/) | Scoring harness (`score.py`) and media license ledger (`data/SOURCES.md`) |
+| [`FEATURE_MAP.md`](./FEATURE_MAP.md) | Full-stack feature index (`[FEAT:F1]`–`[FEAT:F12]`) and file/symbol reference map |
+| [`videos/`](./videos/README.md) | Rights-cleared master verification videos (`individual/01..08`, combined multi-speed clips `1.0x`–`0.2x`, and `hero_how_it_works.mp4`) |
+| [`docs/`](./docs/README.md) | Hackathon rules, Meta AI model specifications, architecture notes, and compliance audit |
 
 ---
 
@@ -133,10 +151,14 @@ Additional custom concepts (e.g., *Fallen tree*, *Cliff edge*, *Bicycle*, *Black
 
 ## Documentation
 
+- [`AGENTS.md`](./AGENTS.md) — Agent working agreements, workspace map, and compliance guardrails
 - [`FEATURE_MAP.md`](./FEATURE_MAP.md) — Full-stack feature map (`F1`–`F12`) and quick-lookup modification guide
 - [`PRD.md`](./PRD.md) — Product requirements, functional scope, acceptance criteria, and SLOs
 - [`TECH.md`](./TECH.md) — Architecture and technology decisions
 - [`DEPLOY.md`](./DEPLOY.md) — Local server, Cloud Run container, and tunnel deployment guide
+- [`HACKATHON_REQUIREMENTS.md`](./HACKATHON_REQUIREMENTS.md) — Hackathon eligibility rules and compliance checklist
+- [`docs/`](./docs/README.md) — Hackathon rules, Meta AI model specs, application drafts, and audit reports
+- [`videos/`](./videos/README.md) — Master verification video assets and scene catalog
 - [`eval/data/SOURCES.md`](./eval/data/SOURCES.md) — Per-file media sources and open-license attributions
 
 ## License

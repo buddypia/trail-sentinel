@@ -20,3 +20,14 @@ eval/data/*.mp4
 eval/data/*.webm
 eval/data/*.mov
 eval/data/verification_videos/*.mp4
+
+# Master verification videos — local only (catalog in videos/README.md is kept;
+# web-serving compressed copies in webapp/videos/ are tracked instead)
+videos/**/*.mp4
+
+# Local tool state
+.playwright-cli/
+.tmp/
+
+# macOS
+.DS_Store
