@@ -111,6 +111,7 @@ _MEDIA_SUFFIXES = {
     "image/webp": ".webp",
 }
 
+# === [FEAT:F3] Ground-plane distance heuristic ===============================
 # --- Ground-plane distance heuristic (ESTIMATE — read before trusting) ------
 #
 # SAM gives no distance, so live detections need an estimated one. Model: the

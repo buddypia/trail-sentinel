@@ -26,7 +26,11 @@ const kpiBudget = $("kpiBudget");
 const btnLive = $("btnLive");
 const btnDemo = $("btnDemo");
 const btnStartHero = $("btnStartHero");
+const btnVerifyVideoHero = $("btnVerifyVideoHero");
 const btnDemoHero = $("btnDemoHero");
+const heroShowcaseVideo = $("heroShowcaseVideo");
+const verifySpeedSelect = $("verifySpeedSelect");
+const verifyDownloadLink = $("verifyDownloadLink");
 const btnAudio = $("btnAudio");
 const audioLabel = $("audioLabel");
 const btnQrModal = $("btnQrModal");
@@ -57,6 +61,7 @@ const LAST_FRAME = 60;
 const SCAN_TIMEOUT_MS = 18000;
 const ALERT_VALIDITY_MS = 5000;
 
+// === [FEAT:F10] Multi-Language i18n Dictionary & Locale Detection (EN/JA/KO) =
 const SUPPORTED_LANGS = ["en", "ja", "ko"];
 const DEFAULT_LANG = "en";
 const LANG_STORAGE_KEY = "trail_sentinel_lang";
@@ -85,8 +90,12 @@ const I18N = {
     hero_title: "Real-Time Trail Hazard Detection",
     hero_copy:
       "Point your camera at a trail or test video to segment and track prompt-defined hazards at the pixel level, with instant voice and haptic warnings when entering hazard range.",
+    showcase_badge: "▶ How It Works · Live HUD Preview (Snake · Boar · Bear)",
+    btn_download_verify: "Download Verification Video",
     btn_start_hero: "Start Camera Scan",
+    btn_verify_video_hero: "Scan Verification Video (Snake · Boar)",
     btn_demo_hero: "Play Hero Demo Scene (Frames 0..60)",
+    demo_badge_verify_video: "Scanning verification video (Snake · Boar · Bear)",
     qr_inline_title: "Open Instantly on Smartphone",
     qr_expand_btn: "Enlarge QR",
     qr_inline_hint:
@@ -169,8 +178,12 @@ const I18N = {
     hero_title: "前方トレイルの危険要素をリアルタイム計測",
     hero_copy:
       "カメラで登山道やテスト動画を映すと、テキストプロンプトで定義された危険要素をピクセル単位で分割・追跡し、危険半径に入った際に方向と距離を音声・振動で即座に警告します。",
+    showcase_badge: "▶ このように動きます · 検知プレビュー（落葉の蛇・山中の蛇・猪・熊）",
+    btn_download_verify: "検証動画をダウンロード",
     btn_start_hero: "カメラスキャン開始",
+    btn_verify_video_hero: "検証動画でスキャン (蛇・猪・熊)",
     btn_demo_hero: "ヒーローデモ再生 (フレーム 0..60)",
+    demo_badge_verify_video: "検証動画をスキャン中（落葉の蛇・山中の蛇・猪・熊）",
     qr_inline_title: "スマホのカメラですぐ開く",
     qr_expand_btn: "QRを拡大表示",
     qr_inline_hint:
@@ -253,8 +266,12 @@ const I18N = {
     hero_title: "전방 등산로 위험 요소 실시간 계측",
     hero_copy:
       "카메라로 등산로나 테스트 영상을 비추면 텍스트 프롬프트로 정의된 위험 요소를 픽셀 단위로 분할·추적하고, 위험 반경 진입 시 방향과 거리를 음성·진동으로 즉시 경고합니다.",
+    showcase_badge: "▶ 실제 작동 미리보기 (낙엽 속 뱀 · 산속 뱀 · 멧돼지 · 곰)",
+    btn_download_verify: "검증 영상 다운로드",
     btn_start_hero: "카메라 스캔 시작",
+    btn_verify_video_hero: "검증 영상으로 스캔 (뱀 · 멧돼지)",
     btn_demo_hero: "히어로 데모 장면 재생 (프레임 0..60)",
+    demo_badge_verify_video: "검증 영상 실시간 스캔 중 (뱀 · 멧돼지 · 곰)",
     qr_inline_title: "스마트폰 카메라로 바로 열기",
     qr_expand_btn: "QR 크게 보기",
     qr_inline_hint:
@@ -375,6 +392,13 @@ let lastStatus = null;
 let lastDetections = [];
 let lastReportedMs = null;
 let lastAlertObj = null;
+let isVerifyVideo = false;
+
+function getVerificationVideoFilename() {
+  const speed = verifySpeedSelect ? verifySpeedSelect.value : "0.33x";
+  if (speed === "1.0x") return "hazard_verification_combined.mp4";
+  return `hazard_verification_combined_${speed}.mp4`;
+}
 
 function t(key) {
   const dict = I18N[currentLang] || I18N[DEFAULT_LANG];
@@ -446,6 +470,7 @@ function getAlertText(alert) {
   return alert.text || alert.text_en || alert.text_ko || "";
 }
 
+// === [FEAT:F2] Model Switcher & Pipeline Spec Synchronization ===============
 function syncModelOptionsUI() {
   if (!modelSelect || modelsMeta.size === 0) return;
   for (const opt of modelSelect.options) {
@@ -511,8 +536,12 @@ function applyLanguage(lang, { userInitiated = false } = {}) {
     conceptPromptInput.placeholder = t("concept_prompt_placeholder");
   }
   if (!demoBadge.hidden) {
-    demoBadge.textContent =
-      mode === "demo" ? t("demo_badge_replay") : t("demo_badge_stub");
+    if (video && video.getAttribute("src")) {
+      demoBadge.textContent = t("demo_badge_verify_video");
+    } else {
+      demoBadge.textContent =
+        mode === "demo" ? t("demo_badge_replay") : t("demo_badge_stub");
+    }
   }
 
   syncModelOptionsUI();
@@ -540,6 +569,7 @@ function applyLanguage(lang, { userInitiated = false } = {}) {
   }
 }
 
+// === [FEAT:F3] [FEAT:F8] Telemetry KPIs, Status Line & Concept Filter Chips =
 function renderStatus(extra) {
   if (!lastStatus) {
     statusEl.textContent = t("status_checking");
@@ -669,6 +699,7 @@ async function loadStatus() {
   }
 }
 
+// === [FEAT:F1] [FEAT:F6] Frame Capture, Scan Loop & 3s Validity Guard =======
 function captureFrame() {
   if (!video.videoWidth || !video.videoHeight || video.readyState < 2) return null;
   const vw = video.videoWidth;
@@ -748,6 +779,11 @@ async function scanOnce(reset) {
       if (!image) {
         nextDelay = 200;
         return;
+      }
+      if (isVerifyVideo) {
+        try {
+          video.pause();
+        } catch {}
       }
       body = {
         image,
@@ -863,10 +899,22 @@ async function scanOnce(reset) {
     nextDelay = 700;
   } finally {
     scanning = false;
-    scheduleNextTick(nextDelay);
+    if (isRunning && isVerifyVideo && isRealLive) {
+      // Hold the detected mask/box on the captured frame briefly (650ms),
+      // then resume slow video playback for 1300ms before capturing the next frame
+      setTimeout(() => {
+        if (isRunning && isVerifyVideo) {
+          video.play().catch(() => {});
+        }
+      }, 650);
+      scheduleNextTick(Math.max(nextDelay, 1950));
+    } else {
+      scheduleNextTick(nextDelay);
+    }
   }
 }
 
+// === [FEAT:F5] Optical HUD Canvas Overlay (Mask + BBox + Pills) =============
 function showImmediateBanner(det) {
   if (!banner.hidden) return;
   banner.hidden = false;
@@ -958,6 +1006,7 @@ function drawBoxes(dets) {
   }
 }
 
+// === [FEAT:F5] Localized Voice Synthesis (TTS) & Haptic Vibration ===========
 function pickVoiceForLang(langCode) {
   try {
     if (!window.speechSynthesis || !speechSynthesis.getVoices) return null;
@@ -1021,6 +1070,7 @@ function unlockSpeech() {
   } catch {}
 }
 
+// === [FEAT:F1] [FEAT:F6] [FEAT:F11] Mode Controllers (Camera / Demo / Video)
 async function startLiveScan() {
   if (isRunning) {
     stopAll();
@@ -1092,8 +1142,49 @@ function startDemoMode() {
   scanOnce(true);
 }
 
+async function startVerificationVideoScan() {
+  if (isRunning) stopAll();
+  unlockSpeech();
+  try {
+    if (heroShowcaseVideo) {
+      heroShowcaseVideo.pause();
+    }
+    const filename = getVerificationVideoFilename();
+    video.srcObject = null;
+    video.src = `videos/${filename}`;
+    video.loop = true;
+    video.muted = true;
+    await video.play();
+
+    isRunning = true;
+    isVerifyVideo = true;
+    mode = "live";
+    frame = 0;
+    lastSpoken = "";
+    emptyAlertFrames = 0;
+    msg.hidden = true;
+    banner.hidden = true;
+    stage.classList.add("live-active");
+    stage.classList.remove("demo-bg");
+    demoBadge.textContent = t("demo_badge_verify_video");
+    demoBadge.hidden = false;
+    registerSuccess();
+
+    btnLive.textContent = t("btn_live_stop");
+    btnLive.classList.remove("primary");
+    btnLive.classList.add("stop");
+    if (btnDemo) btnDemo.disabled = true;
+
+    setTimeout(() => scanOnce(true), 240);
+  } catch {
+    msg.hidden = false;
+    msgText.textContent = t("err_network");
+  }
+}
+
 function stopAll(note) {
   isRunning = false;
+  isVerifyVideo = false;
   mode = null;
   clearTimeout(loopTimer);
   loopTimer = null;
@@ -1101,7 +1192,15 @@ function stopAll(note) {
     stream.getTracks().forEach((tr) => tr.stop());
     stream = null;
   }
-  video.srcObject = null;
+  try {
+    video.pause();
+    video.srcObject = null;
+    video.removeAttribute("src");
+    video.load();
+  } catch {}
+  if (heroShowcaseVideo) {
+    heroShowcaseVideo.play().catch(() => {});
+  }
   stage.classList.remove("live-active");
   stage.classList.remove("demo-bg");
   demoBadge.hidden = true;
@@ -1131,8 +1230,18 @@ btnLive.onclick = () => {
   else startLiveScan();
 };
 if (btnStartHero) btnStartHero.onclick = () => startLiveScan();
+if (btnVerifyVideoHero) btnVerifyVideoHero.onclick = () => startVerificationVideoScan();
 if (btnDemo) btnDemo.onclick = () => startDemoMode();
 if (btnDemoHero) btnDemoHero.onclick = () => startDemoMode();
+if (verifySpeedSelect) {
+  verifySpeedSelect.onchange = () => {
+    const filename = getVerificationVideoFilename();
+    if (verifyDownloadLink) {
+      verifyDownloadLink.href = `videos/${filename}`;
+      verifyDownloadLink.setAttribute("download", filename);
+    }
+  };
+}
 
 if (btnAudio) {
   btnAudio.onclick = () => {
@@ -1151,6 +1260,7 @@ if (btnAudio) {
   };
 }
 
+// === [FEAT:F7] Zero-Retraining Live Custom Concept UI (Text + Voice Input) ==
 if (btnAddConcept && conceptForm) {
   btnAddConcept.onclick = () => {
     conceptForm.hidden = !conceptForm.hidden;
@@ -1213,6 +1323,7 @@ if (btnVoiceConcept && conceptNameInput) {
   };
 }
 
+// === [FEAT:F12] Mobile QR Sheet Modal & URL Copy ============================
 if (btnQrModal && qrPanel) {
   btnQrModal.onclick = () => qrPanel.classList.add("open");
 }

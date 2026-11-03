@@ -144,6 +144,7 @@ class BudgetNotConfiguredError(RuntimeError):
 DistanceEstimator = Callable[[Mapping[str, Any], SegmentRequest], float]
 
 
+# === [FEAT:F6] StubSAMClient (Hero Replay Fixtures) ==========================
 class StubSAMClient:
     """Returns canned detections from fixture JSON files (no API calls).
 
@@ -179,6 +180,7 @@ class StubSAMClient:
         return out
 
 
+# === [FEAT:F2] RealSAMClient (Guarded Live SAM 3.1 Adapter) ==================
 class RealSAMClient:
     """Guarded adapter for the verified Meta SAM transport.
 

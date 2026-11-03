@@ -14,6 +14,7 @@ from pathlib import Path
 # calls themselves live in the connector helper, not in this package.
 META_MODEL_API_HOST = "api.meta.ai"
 
+# === [FEAT:F2] [FEAT:F7] [FEAT:F10] Hazard Concepts & Custom Registration ===
 # --- Hazard concepts v1 (frozen by spec, 2026-10-28). Max 6 baseline + F7 live custom concepts. ---
 # zone: "feet" (발밑/발 앞) or "front" (전방). severity: 1 (caution) .. 3 (stop).
 @dataclass(frozen=True)
@@ -130,6 +131,7 @@ def reset_custom_hazards() -> None:
             HAZARD_BY_KEY[h.key] = h
 
 
+# === [FEAT:F8] Daily API Spend Guard (CallBudget) ============================
 # --- Spending guard: no hard cap exists on Meta billing, so the client
 # enforces its own daily call budget with a JSON counter file. ---
 class BudgetExceeded(RuntimeError):

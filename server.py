@@ -64,6 +64,7 @@ WEBAPP = ROOT / "webapp"
 DEFAULT_SCENE = "hero_snake_leaves"
 FPS = 10.0
 
+# === [FEAT:F8] Live-mode & CallBudget guardrails =============================
 # --- Live-mode guardrails ---------------------------------------------------
 # One SAM call takes ~3s and costs USD 0.0025 per concept. The server-side
 # minimum interval caps the live scan rate regardless of client behaviour;
@@ -90,6 +91,7 @@ _prev_by_track: dict[str, Detection] = {}
 _last_alert_frame: dict[str, int] = {}
 
 
+# === [FEAT:F10] Multi-language detection & alert payload serialization ======
 def _label(concept: str, lang: str = "ko") -> str:
     h = next(h for h in HAZARDS if h.key == concept)
     return h.label_for(lang)
@@ -136,6 +138,7 @@ def _alert_payload(decision, lang: str = "en") -> dict:
     }
 
 
+# === [FEAT:F6] Demo / Stub frame scan path ===================================
 def scan_frame(
     scene: str, frame_idx: int, reset: bool = False, lang: str = "en"
 ) -> dict:
@@ -171,6 +174,7 @@ def scan_frame(
         }
 
 
+# === [FEAT:F1] [FEAT:F2] Live camera & verification video scan path =========
 # --- Live path ---------------------------------------------------------------
 
 def filter_concepts(concepts) -> list[str]:
@@ -416,6 +420,7 @@ def status() -> dict:
     }
 
 
+# === [FEAT:F7] Zero-retraining custom hazard registration (POST /api/concepts)
 def add_concept(body: dict) -> tuple[dict, int]:
     """Register a custom hazard concept at runtime without retraining (PRD F7)."""
     try:
@@ -453,6 +458,7 @@ def add_concept(body: dict) -> tuple[dict, int]:
     }, 200
 
 
+# === [FEAT:HTTP] HTTP Request Handler (/api/status, /api/scan, /api/concepts)
 class Handler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(WEBAPP), **kwargs)

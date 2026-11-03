@@ -19,3 +19,4 @@ deploy/logs/
 eval/data/*.mp4
 eval/data/*.webm
 eval/data/*.mov
+eval/data/verification_videos/*.mp4

@@ -8,10 +8,11 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=20261103">
+<link rel="stylesheet" href="style.css?v=20261103b">
 </head>
 <body>
 <div class="app-shell" data-ui>
+  <!-- === [FEAT:F10] [FEAT:F2] [FEAT:F5] [FEAT:F12] Top Instrument Bar (Lang / Model / Voice / QR) === -->
   <!-- Top Instrument Bar (Ruled T-Frame Header) -->
   <header class="hud-top">
     <div class="brand-group">
@@ -76,6 +77,7 @@
   <!-- Main Workspace Grid: Left Viewfinder + Right Instrument & QR Rail -->
   <div class="workspace-grid">
     <main id="stage" class="viewfinder">
+      <!-- === [FEAT:F3] [FEAT:F8] Divided 4-KPI Telemetry Strip === -->
       <!-- Divided 4-KPI Telemetry Strip -->
       <section class="kpi-strip" aria-label="Real-time telemetry">
         <div class="kpi-cell">
@@ -96,6 +98,7 @@
         </div>
       </section>
 
+      <!-- === [FEAT:F1] [FEAT:F5] [FEAT:F6] [FEAT:F11] Optical Stage Canvas & Standby Hero Card === -->
       <!-- Optical Stage Canvas -->
       <div class="optical-frame">
         <video id="cam" autoplay playsinline muted></video>
@@ -120,8 +123,30 @@
               <p class="start-scope" data-i18n="hero_scope">Meta SAM 3.1 + Muse Wonder · Optical Segmentation &amp; Range Triage</p>
               <h2 data-i18n="hero_title">Real-Time Trail Hazard Detection</h2>
               <p id="messageText" class="start-copy" data-i18n="hero_copy">Point your camera at a trail or test video to segment and track prompt-defined hazards at the pixel level, with instant voice and haptic warnings when entering hazard range.</p>
+
+              <!-- Top-screen "How It Works" Live Detection Showcase Video -->
+              <div class="hero-showcase-box">
+                <div class="hero-showcase-head">
+                  <span class="hero-showcase-badge" data-i18n="showcase_badge">▶ How It Works · Live HUD Preview (Snake · Boar · Bear)</span>
+                  <div class="verify-speed-controls">
+                    <select id="verifySpeedSelect" class="verify-speed-select" aria-label="Verification video playback speed">
+                      <option value="0.2x">0.2x (30s/scene)</option>
+                      <option value="0.25x">0.25x (24s/scene)</option>
+                      <option value="0.33x" selected>0.33x (18s/scene)</option>
+                      <option value="0.5x">0.5x (12s/scene)</option>
+                      <option value="1.0x">1.0x (6s/scene)</option>
+                    </select>
+                    <a id="verifyDownloadLink" href="videos/hazard_verification_combined_0.33x.mp4" download="hazard_verification_combined_0.33x.mp4" class="text-action-btn" data-i18n="btn_download_verify">Download Verification Video</a>
+                  </div>
+                </div>
+                <div class="hero-showcase-video-wrap">
+                  <video id="heroShowcaseVideo" src="videos/hero_how_it_works.mp4" autoplay loop muted playsinline preload="auto"></video>
+                </div>
+              </div>
+
               <div class="hero-btn-group">
                 <button id="btnStartHero" type="button" class="primary-btn" data-i18n="btn_start_hero">Start Camera Scan</button>
+                <button id="btnVerifyVideoHero" type="button" class="secondary-btn verify-video-btn" data-i18n="btn_verify_video_hero">Scan Verification Video (Snake · Boar)</button>
                 <button id="btnDemoHero" type="button" class="secondary-btn" data-i18n="btn_demo_hero">Play Hero Demo Scene (Frames 0..60)</button>
               </div>
             </div>
@@ -146,6 +171,7 @@
         </div>
       </div>
 
+      <!-- === [FEAT:F7] [FEAT:F1] [FEAT:F6] Bottom Control Dock & Custom Concept Bar === -->
       <!-- Bottom Control Dock -->
       <section class="hud-bottom">
         <div class="chips-bar">
@@ -172,6 +198,7 @@
       </section>
     </main>
 
+    <!-- === [FEAT:F12] [FEAT:F2] [FEAT:F3] Right Rail (QR Access + Pipeline Spec + Detection Log) === -->
     <!-- Right Rail (Desktop) & Sheet Modal (Mobile) for QR Code + Live Telemetry -->
     <aside id="qrPanel" class="qr-panel" aria-label="Mobile access QR code and system telemetry">
       <div class="qr-sheet-inner">
@@ -251,6 +278,6 @@
   </div>
 </div>
 
-<script src="app.js?v=20261103"></script>
+<script src="app.js?v=20261103b"></script>
 </body>
 </html>

@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from .config import HAZARD_BY_KEY
 from .sam_client import Detection
 
+# === [FEAT:F4] [FEAT:F5] [FEAT:F10] Priority Triage & Localized Spoken Phrase
 # Alert distance by severity: a low-severity hazard (wet leaves underfoot)
 # only alerts when it is imminent, otherwise it would fire constantly and
 # drown out real dangers. Severity 3 stops you at 3 metres.

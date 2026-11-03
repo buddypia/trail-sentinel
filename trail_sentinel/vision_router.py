@@ -78,6 +78,7 @@ def get_gcp_project_id() -> str:
         pass
     raise RuntimeError("GOOGLE_CLOUD_PROJECT is not configured")
 
+# === [FEAT:F2] Meta AI Multi-Model Lineup & Bridge Config ====================
 AVAILABLE_MODELS: tuple[dict[str, Any], ...] = (
     {
         "id": "sam-3.1-hybrid",
@@ -220,6 +221,7 @@ def _reset_https_connection() -> None:
     _tls_local.conn = None
 
 
+# === [FEAT:F3] [FEAT:F5] Visual Distance Heuristic & Contour Mask Synthesis ==
 def estimate_visual_distance_m(
     bbox: list[float], model_distance_m: float | None = None
 ) -> float:
@@ -270,6 +272,7 @@ def synthesize_contour_mask_png(
     return f"data:image/png;base64,{png_b64}", [round(v, 4) for v in bbox]
 
 
+# === [FEAT:F2] Single-Pass Multi-Concept Vision & Semantic Verification ======
 def scan_with_vertex_vision(
     image_bytes: bytes,
     media_type: str,
