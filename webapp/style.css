@@ -76,11 +76,33 @@ html, body {
   -webkit-font-smoothing: antialiased;
   -webkit-text-size-adjust: 100%;
   touch-action: manipulation;
+  /* Stop horizontal rubber-banding / left-right shake on touch devices */
+  overscroll-behavior-x: none;
 }
 
-/* overflow-x:clip (not hidden) so sticky bottom bar keeps working */
+/* overflow-x:clip (not hidden) so sticky bottom bar keeps working.
+ * Applied to html as well as body: on mobile Safari the viewport
+ * propagator is html, so body-only clipping still lets the page
+ * pan sideways when any child momentarily overflows. */
+html,
 body {
+  overflow-x: hidden;
   overflow-x: clip;
+  max-width: 100%;
+}
+
+img,
+video,
+canvas,
+svg,
+iframe {
+  max-width: 100%;
+}
+
+select,
+input,
+button {
+  max-width: 100%;
 }
 
 html:lang(ko) body {
@@ -97,8 +119,10 @@ html:lang(ko) body {
   width: 100%;
   min-height: 100dvh;
   max-width: 100%;
+  min-width: 0;
   background: var(--ground);
   margin: 0 auto;
+  overflow-x: clip;
 }
 
 /* === Top App Bar (mobile: 2 rows — brand+voice / selects) === */
@@ -170,6 +194,7 @@ html:lang(ko) body {
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
 }
 
 .hud-actions-primary {
@@ -180,6 +205,8 @@ html:lang(ko) body {
 .hud-actions-selects {
   flex: 1 1 100%;
   min-width: 0;
+  max-width: 100%;
+  flex-wrap: wrap;
 }
 
 .model-select-wrap {
@@ -219,11 +246,14 @@ html:lang(ko) body {
   color: var(--text);
   border: none;
   font-family: var(--font);
-  font-size: 14px;
+  /* 16px prevents iOS Safari focus auto-zoom (layout shift/shake) */
+  font-size: 16px;
   font-weight: 500;
   min-height: var(--control-height);
   outline: none;
   cursor: pointer;
+  flex: 1 1 auto;
+  width: 100%;
   min-width: 0;
   max-width: 100%;
   text-overflow: ellipsis;
@@ -333,8 +363,20 @@ html:lang(ko) body {
   justify-content: center;
   gap: 2px;
   min-height: 64px;
+  min-width: 0;
   padding: 8px 12px;
   border-right: 1px solid var(--border);
+}
+
+.kpi-strip,
+.viewfinder,
+.workspace-grid,
+.qr-panel,
+.qr-sheet-inner,
+.rail-card,
+.hud-bottom {
+  min-width: 0;
+  max-width: 100%;
 }
 .kpi-cell:nth-child(2n) {
   border-right: none;
@@ -374,6 +416,8 @@ html:lang(ko) body {
 .optical-frame {
   position: relative;
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   aspect-ratio: 4 / 3;
   min-height: 300px;
   background: url("/hero_snake_leaves_01.jpg") center / cover no-repeat, var(--surface);
@@ -384,6 +428,19 @@ html:lang(ko) body {
   align-items: center;
   justify-content: center;
   scroll-margin-top: 8px;
+}
+
+/* Standby: the welcome card (copy + showcase video + CTAs) is taller
+ * than a 4:3 camera frame. Grow the frame to fit it instead of
+ * centre-cropping it with overflow:hidden — otherwise the title and
+ * buttons are cut off and unreachable on phones. Camera/demo modes
+ * hide the overlay, so the frame returns to 4:3 there. */
+.optical-frame:has(> .start-overlay:not([hidden])) {
+  aspect-ratio: auto;
+  height: auto;
+  min-height: 0;
+  align-items: stretch;
+  justify-content: flex-start;
 }
 
 .viewfinder.live-active .optical-frame {
@@ -531,11 +588,13 @@ html:lang(ko) body {
   position: relative;
   z-index: 10;
   width: 100%;
-  height: 100%;
+  max-width: 100%;
+  min-width: 0;
+  height: auto;
   padding: var(--pad);
   background: rgba(0, 0, 0, 0.64);
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
 }
 .start-overlay[hidden] {
@@ -545,6 +604,7 @@ html:lang(ko) body {
 .start-card {
   width: 100%;
   max-width: 560px;
+  min-width: 0;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-card);
@@ -803,10 +863,16 @@ html:lang(ko) body {
   margin-bottom: var(--pad);
 }
 
+/* Mobile: label + add-button on the first row, chips scroll on
+ * their own full-width row (a squeezed 1-chip sliver reads as broken).
+ * >=700px restores the single-row layout. */
 .chips-bar {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .chips-label {
@@ -817,10 +883,14 @@ html:lang(ko) body {
 
 .chips {
   display: flex;
-  flex: 1 1 auto;
+  flex: 1 1 100%;
+  order: 3;
   min-width: 0;
+  max-width: 100%;
   gap: 8px;
   overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
   scroll-snap-type: x proximity;
   padding: 2px;
@@ -866,6 +936,7 @@ html:lang(ko) body {
 
 .add-concept-chip {
   flex: 0 0 auto;
+  margin-left: auto;
   min-height: var(--control-height);
   padding: 0 14px;
   background: var(--surface);
@@ -931,7 +1002,7 @@ html:lang(ko) body {
 
 .scan-toggle-btn {
   min-height: var(--scan-btn-height);
-  padding: 0 18px;
+  padding: 10px 18px;
   font-family: var(--font);
   font-size: 17px;
   font-weight: 700;
@@ -940,7 +1011,9 @@ html:lang(ko) body {
   cursor: pointer;
   color: var(--ground);
   background: var(--text);
-  white-space: nowrap;
+  white-space: normal;
+  line-height: 1.35;
+  text-align: center;
   width: 100%;
 }
 .scan-toggle-btn.active,
@@ -952,7 +1025,7 @@ html:lang(ko) body {
 
 .demo-toggle-btn {
   min-height: 48px;
-  padding: 0 14px;
+  padding: 10px 14px;
   font-family: var(--font);
   font-size: 15px;
   font-weight: 500;
@@ -961,7 +1034,9 @@ html:lang(ko) body {
   border: 1px solid var(--control);
   border-radius: var(--radius-pill);
   cursor: pointer;
-  white-space: nowrap;
+  white-space: normal;
+  line-height: 1.35;
+  text-align: center;
   width: 100%;
 }
 .demo-toggle-btn:disabled {
@@ -1039,7 +1114,10 @@ html:lang(ko) body {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+  flex-wrap: wrap;
   min-height: var(--control-height);
+  min-width: 0;
+  max-width: 100%;
   padding: 8px 10px;
   background: var(--raised);
   border-radius: var(--radius-control);
@@ -1052,11 +1130,15 @@ html:lang(ko) body {
 .log-row-name {
   color: var(--text);
   font-weight: 500;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 .log-row-meta {
   color: var(--muted);
   text-align: right;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  min-width: 0;
 }
 .log-row.crit .log-row-meta {
   color: var(--pill-negative-ink);
@@ -1074,6 +1156,12 @@ body.scanning-active .log-card {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.rail-card-header h2 {
+  min-width: 0;
 }
 
 .rail-card-header h2 {
@@ -1097,6 +1185,13 @@ body.scanning-active .log-card {
   display: flex;
   align-items: center;
   gap: 14px;
+  flex-wrap: wrap;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.qr-steps {
+  flex: 1 1 160px;
 }
 
 .qr-frame {
@@ -1199,7 +1294,10 @@ body.scanning-active .log-card {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  flex-wrap: wrap;
   min-height: var(--control-height);
+  min-width: 0;
+  max-width: 100%;
   padding: 8px 0;
   border-bottom: 1px solid var(--rule);
   font-size: var(--fs-small);
@@ -1211,11 +1309,50 @@ body.scanning-active .log-card {
 .spec-row dt {
   color: var(--muted);
   font-weight: 400;
+  min-width: 0;
 }
 .spec-row dd {
   color: var(--text);
   font-weight: 500;
   text-align: right;
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow-wrap: anywhere;
+}
+
+/* === Phones (<700px): model picker gets its own full-width row so
+ * its label is readable instead of truncating to "S…". Lang + latency
+ * share the row above it. === */
+@media (max-width: 699px) {
+  .hud-top {
+    gap: 8px;
+  }
+  .brand-group {
+    flex: 1 1 auto;
+  }
+  .hud-actions-selects {
+    flex-wrap: wrap;
+  }
+  #langSelectWrap {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .latency-pill {
+    flex: 0 0 auto;
+    margin-left: auto;
+  }
+  #modelSelectWrap {
+    flex: 1 1 100%;
+    order: 3;
+    width: 100%;
+  }
+  .verify-speed-select {
+    font-size: 16px;
+  }
+  .hero-showcase-badge {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
 }
 
 /* === >=700px: widened single column === */
@@ -1229,6 +1366,9 @@ body.scanning-active .log-card {
   }
   .hud-top h1 {
     font-size: var(--fs-title);
+  }
+  .hud-actions-selects {
+    flex-wrap: nowrap;
   }
   .kpi-strip {
     grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -1275,6 +1415,20 @@ body.scanning-active .log-card {
   }
   .scan-toggle-btn {
     flex: 1 1 auto;
+  }
+  /* Single-row chips bar again on wider screens */
+  .chips {
+    flex: 1 1 auto;
+    order: 0;
+  }
+  .add-concept-chip {
+    margin-left: 0;
+  }
+  .model-select {
+    font-size: 14px;
+  }
+  .verify-speed-select {
+    font-size: 14px;
   }
 }
 
