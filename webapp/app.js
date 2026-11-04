@@ -501,6 +501,37 @@ let lastDetections = [];
 let lastReportedMs = null;
 let lastAlertObj = null;
 let isVerifyVideo = false;
+let wakeLock = null;
+
+// === Mobile: keep the screen awake while scanning (field use) ==============
+async function requestWakeLock() {
+  try {
+    if ("wakeLock" in navigator && isRunning && !wakeLock) {
+      wakeLock = await navigator.wakeLock.request("screen");
+      wakeLock.addEventListener("release", () => {
+        wakeLock = null;
+      });
+    }
+  } catch {}
+}
+
+function releaseWakeLock() {
+  try {
+    if (wakeLock) {
+      wakeLock.release().catch(() => {});
+      wakeLock = null;
+    }
+  } catch {}
+}
+
+function scrollStageIntoView() {
+  try {
+    const frame = document.querySelector(".optical-frame");
+    if (!frame) return;
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    frame.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
+  } catch {}
+}
 
 function getVerificationVideoFilename() {
   const speed = verifySpeedSelect ? verifySpeedSelect.value : "0.33x";
@@ -764,11 +795,12 @@ function applyLanguage(lang, { userInitiated = false } = {}) {
       banner.textContent = `${t("alert_prefix")} · ${formatImmediateBannerText(topDet)}`;
     }
   }
+  preloadAlertAudio(currentLang);
   if (userInitiated) {
     unlockSpeech();
     renderStatus(t("status_lang_changed"));
     if (audioEnabled && lastAlertObj && !banner.hidden) {
-      speakText(getAlertText(lastAlertObj));
+      speakAlert(lastAlertObj, getAlertText(lastAlertObj));
     }
   } else {
     renderStatus();
@@ -1145,9 +1177,14 @@ function showImmediateBanner(det) {
 }
 
 function drawBoxes(dets) {
-  canvas.width = canvas.clientWidth;
-  canvas.height = canvas.clientHeight;
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  // DPR-aware backing store: crisp boxes/pills on retina phones, layout in CSS px
+  const dpr = Math.min(window.devicePixelRatio || 1, 3);
+  const cssW = canvas.clientWidth;
+  const cssH = canvas.clientHeight;
+  canvas.width = Math.max(1, Math.round(cssW * dpr));
+  canvas.height = Math.max(1, Math.round(cssH * dpr));
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, cssW, cssH);
 
   const hasCritical = Array.isArray(dets) && dets.some((d) => (d.severity || 1) >= 3);
   if (stage) {
@@ -1164,19 +1201,19 @@ function drawBoxes(dets) {
       img.onload = () =>
         ctx.drawImage(
           img,
-          mx * canvas.width,
-          my * canvas.height,
-          mw * canvas.width,
-          mh * canvas.height
+          mx * cssW,
+          my * cssH,
+          mw * cssW,
+          mh * cssH
         );
       img.src = d.mask_png;
     }
 
     const [x, y, w, h] = d.bbox_norm;
-    const px = x * canvas.width;
-    const py = y * canvas.height;
-    const pw = w * canvas.width;
-    const ph = h * canvas.height;
+    const px = x * cssW;
+    const py = y * cssH;
+    const pw = w * cssW;
+    const ph = h * cssH;
 
     const color =
       d.severity === 3 ? "#e5484d" : d.severity === 2 ? "#e5a93b" : "#c6f24e";
@@ -1232,7 +1269,7 @@ function drawBoxes(dets) {
     const textW = ctx.measureText(label).width;
     const pillW = textW + 18;
     const pillH = 25;
-    const pillX = Math.max(6, Math.min(canvas.width - pillW - 6, px));
+    const pillX = Math.max(6, Math.min(cssW - pillW - 6, px));
     const pillY = py >= pillH + 8 ? py - pillH - 5 : py + 6;
 
     ctx.fillStyle = "rgba(0, 0, 0, 0.88)";
@@ -1274,7 +1311,166 @@ function pickVoiceForLang(langCode) {
   }
 }
 
+// === [FEAT:F5] Pre-generated Neural Alert Voice (tools/make_voice.py) =======
+// Two MP3 fragments (A: where + proximity, B: hazard name) say exactly what
+// getAlertText shows on the banner. Anything without fragments — F7 custom
+// concepts, dual-threat sentences, missing files — falls back to live TTS.
+const AUDIO_VOICE_CONCEPTS = new Set(Object.keys(HAZARD_LABELS_FALLBACK));
+const AUDIO_PRELOAD_TIERS = ["immediate", "approaching", "ahead"];
+const PRELOADED_AUDIO_LANGS = new Set();
+let alertAudioEl = null;
+let alertAudioToken = 0;
+
+function alertAudioUrlA(lang, clock, tier) {
+  const cc = String(clock).padStart(2, "0");
+  return `audio/${lang}/a_c${cc}_${tier}.mp3`;
+}
+
+function alertAudioUrlB(lang, concept) {
+  return `audio/${lang}/b_${concept}.mp3`;
+}
+
+function audioUrlsForLang(lang) {
+  const urls = [];
+  for (let clock = 1; clock <= 12; clock++) {
+    for (const tier of AUDIO_PRELOAD_TIERS) {
+      urls.push(alertAudioUrlA(lang, clock, tier));
+    }
+  }
+  for (const concept of AUDIO_VOICE_CONCEPTS) {
+    urls.push(alertAudioUrlB(lang, concept));
+  }
+  return urls;
+}
+
+// Preload one language's fragment set (~630 KB) when idle and throttled, so
+// the first alert speaks instantly even on slow mobile networks. Only the
+// active language preloads (boot default: English); other languages preload
+// when selected. Skipped while muted or on data-saver connections; a failed
+// probe (files not generated yet) unmarks so a later call retries.
+function preloadAlertAudio(lang) {
+  if (!lang || !SUPPORTED_LANGS.includes(lang)) return;
+  if (PRELOADED_AUDIO_LANGS.has(lang)) return;
+  if (!audioEnabled) return;
+  try {
+    if (navigator.connection && navigator.connection.saveData) return;
+  } catch {}
+  PRELOADED_AUDIO_LANGS.add(lang);
+  const run = () => {
+    if (!audioEnabled) {
+      PRELOADED_AUDIO_LANGS.delete(lang);
+      return;
+    }
+    const probe = alertAudioUrlB(lang, [...AUDIO_VOICE_CONCEPTS][0]);
+    fetch(probe).then(
+      (res) => {
+        if (!res.ok) {
+          PRELOADED_AUDIO_LANGS.delete(lang);
+          return;
+        }
+        res.arrayBuffer().catch(() => {});
+        const urls = audioUrlsForLang(lang);
+        let i = 0;
+        const pump = () => {
+          if (i >= urls.length) return;
+          const batch = urls.slice(i, i + 3);
+          i += batch.length;
+          Promise.allSettled(
+            batch.map((u) =>
+              fetch(u).then(
+                (r) => r.arrayBuffer().catch(() => {}),
+                () => {}
+              )
+            )
+          ).then(() => setTimeout(pump, 0));
+        };
+        pump();
+      },
+      () => PRELOADED_AUDIO_LANGS.delete(lang)
+    );
+  };
+  try {
+    if (window.requestIdleCallback) {
+      requestIdleCallback(run, { timeout: 5000 });
+      return;
+    }
+  } catch {}
+  setTimeout(run, 1500);
+}
+
+function stopAlertAudio() {
+  alertAudioToken++;
+  if (alertAudioEl) {
+    try {
+      alertAudioEl.onended = null;
+      alertAudioEl.onerror = null;
+      alertAudioEl.pause();
+    } catch {}
+    alertAudioEl = null;
+  }
+}
+
+function pickAlertAudio(alert) {
+  if (!alert) return null;
+  const sorted = sortDetectionsByPriority(lastDetections);
+  const matched =
+    sorted.find((d) => d.concept === alert.concept) || sorted[0] || null;
+  if (!matched) return null;
+  const topThreat = sorted[0] || null;
+  const primaryDet =
+    topThreat && (topThreat.severity || 1) > (matched.severity || 1)
+      ? topThreat
+      : matched;
+  if (primaryDet !== matched) return null;
+  if (!AUDIO_VOICE_CONCEPTS.has(primaryDet.concept)) return null;
+  const dir = primaryDet.clock_direction || 12;
+  if (!Number.isInteger(dir) || dir < 1 || dir > 12) return null;
+  const tier = getProximityTier(primaryDet.distance_m);
+  return [
+    alertAudioUrlA(currentLang, dir, tier),
+    alertAudioUrlB(currentLang, primaryDet.concept),
+  ];
+}
+
+function playAlertAudio(urls, fallbackText) {
+  stopAlertAudio();
+  try {
+    speechSynthesis.cancel();
+  } catch {}
+  const my = alertAudioToken;
+  const first = new Audio(urls[0]);
+  const second = new Audio(urls[1]);
+  alertAudioEl = first;
+  const giveUp = () => {
+    if (alertAudioToken !== my) return;
+    alertAudioEl = null;
+    speakText(fallbackText);
+  };
+  first.onerror = giveUp;
+  first.onended = () => {
+    if (alertAudioToken !== my) return;
+    alertAudioEl = second;
+    second.onerror = () => {
+      if (alertAudioToken === my) alertAudioEl = null;
+    };
+    second.onended = () => {
+      if (alertAudioToken === my) alertAudioEl = null;
+    };
+    second.play().catch(() => {
+      if (alertAudioToken === my) alertAudioEl = null;
+    });
+  };
+  first.play().catch(giveUp);
+}
+
+function speakAlert(alert, alertText) {
+  const urls = pickAlertAudio(alert);
+  if (urls) playAlertAudio(urls, alertText);
+  else speakText(alertText);
+}
+
 function speakText(spokenText) {
+  stopAlertAudio();
   if (!audioEnabled || !window.speechSynthesis || !spokenText) return;
   try {
     speechSynthesis.cancel();
@@ -1300,12 +1496,11 @@ function fireAlert(alert) {
   const now = Date.now();
   if (
     audioEnabled &&
-    window.speechSynthesis &&
     (alertText !== lastSpoken || now - lastSpokenAt > 4500)
   ) {
     lastSpoken = alertText;
     lastSpokenAt = now;
-    speakText(alertText);
+    speakAlert(alert, alertText);
   }
   if (navigator.vibrate) {
     navigator.vibrate(isDanger ? [250, 100, 250] : [150]);
@@ -1365,6 +1560,8 @@ async function startLiveScan() {
     btnLive.classList.remove("primary");
     btnLive.classList.add("stop");
     if (btnDemo) btnDemo.disabled = true;
+    requestWakeLock();
+    scrollStageIntoView();
 
     setTimeout(() => scanOnce(true), 120);
   } catch {
@@ -1394,6 +1591,8 @@ function startDemoMode() {
   btnLive.classList.remove("primary");
   btnLive.classList.add("stop");
   if (btnDemo) btnDemo.disabled = true;
+  requestWakeLock();
+  scrollStageIntoView();
 
   scanOnce(true);
 }
@@ -1431,6 +1630,8 @@ async function startVerificationVideoScan() {
     btnLive.classList.remove("primary");
     btnLive.classList.add("stop");
     if (btnDemo) btnDemo.disabled = true;
+    requestWakeLock();
+    scrollStageIntoView();
 
     setTimeout(() => scanOnce(true), 240);
   } catch {
@@ -1443,8 +1644,10 @@ function stopAll(note) {
   isRunning = false;
   isVerifyVideo = false;
   mode = null;
+  releaseWakeLock();
   clearTimeout(loopTimer);
   loopTimer = null;
+  stopAlertAudio();
   if (stream) {
     stream.getTracks().forEach((tr) => tr.stop());
     stream = null;
@@ -1473,6 +1676,7 @@ function stopAll(note) {
   lastAlertObj = null;
   highlightDetectedChips([]);
   updateTelemetryKpis([], null);
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   btnLive.textContent = t("btn_live_start");
@@ -1511,10 +1715,12 @@ if (btnAudio) {
       btnAudio.textContent = audioEnabled ? t("voice_on") : t("voice_off");
     }
     btnAudio.classList.toggle("muted", !audioEnabled);
-    if (!audioEnabled && window.speechSynthesis) {
-      speechSynthesis.cancel();
-    } else if (audioEnabled) {
+    if (!audioEnabled) {
+      if (window.speechSynthesis) speechSynthesis.cancel();
+      stopAlertAudio();
+    } else {
       unlockSpeech();
+      preloadAlertAudio(currentLang);
     }
   };
 }
@@ -1626,6 +1832,12 @@ if (modelSelect) {
     renderStatus(t("status_model_changed"));
   };
 }
+
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible" && isRunning) {
+    requestWakeLock();
+  }
+});
 
 applyLanguage(currentLang);
 loadStatus();

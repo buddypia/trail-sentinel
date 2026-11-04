@@ -30,4 +30,4 @@ jobs:
 
       - name: JSON assets valid
         run: |
-          python3 -c "import json; json.load(open('eval/clips_manifest.json')); print('JSON OK')"
+          python3 -c "import json; json.load(open('eval/clips_manifest.json')); json.load(open('webapp/manifest.webmanifest')); print('JSON OK')"
