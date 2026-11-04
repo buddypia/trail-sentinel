@@ -149,6 +149,27 @@ Additional custom concepts (e.g., *Fallen tree*, *Cliff edge*, *Bicycle*, *Black
 
 ---
 
+## Hackathon Work vs. Pre-existing / Third-Party Material
+
+**New work (hackathon period 2026-10-26 → 2026-11-04 ET).** The git history of this repository starts on 2026-10-31 and every commit falls inside the build period. All application code was written during the hackathon: `server.py` and the root backend modules (`config.py`, `vision_router.py`, `triage.py`, `sam_client.py`, `meta_transport.py`, `pipeline.py`, `alerts.py`, `main.py`), the whole `webapp/` HUD (`index.html`, `app.js`, `style.css`), `tests/` (unit suite), `eval/score.py`, `tools/`, the `Dockerfile` and `deploy/` scripts, and all documentation. The backend uses the Python standard library only — **no third-party Python packages** and no frontend framework or JS library.
+
+**Meta models used (core to the product).**
+
+| Model | Role in Trail Sentinel |
+| :--- | :--- |
+| **Meta SAM 3.1** (Meta Model API) | Promptable concept segmentation — pixel masks and boxes for each hazard concept, including runtime-added concepts (`F2`, `F7`) |
+| **Muse Spark 1.3** (Meta Model API) | Semantic verification of each segmented region in the default `SAM 3.1 + Muse Spark 1.3` hybrid; also selectable as a stand-alone model |
+| **Muse Wonder 1.0**, **Muse Glimmer 30B** | Selectable alternative vision models in the model switcher (`vision_router.py`). The priority-triage step (`triage.py`) is deterministic code that fills the "Muse Wonder role" — it is not a model call |
+
+**Pre-existing and third-party material (not authored for this hackathon).**
+
+- **Models / services:** Meta Model API (SAM 3.1, Muse Spark 1.3 …) and Google Cloud Run hosting are used as external services; no model weights are vendored.
+- **Browser standard APIs:** `getUserMedia`, Canvas 2D, Web Speech API (`speechSynthesis`, `SpeechRecognition`), Vibration API, `localStorage`.
+- **Web font:** Inter (Google Fonts, SIL OFL) is loaded from the Google Fonts CDN.
+- **Voice clips:** the 126 short MP3 fragments in `webapp/audio/` were synthesized by `tools/make_voice.py` with the `edge-tts` tool and neural voices (`en-US-AvaNeural`, `ko-KR-SunHiNeural`, `ja-JP-NanamiNeural`); the script, not the clips' voices, is our work.
+- **Test / demo footage:** every video and still used for verification is open-licensed (Pexels License, Wikimedia Commons CC BY / CC BY-SA, public domain) and credited per file in [`eval/data/SOURCES.md`](./eval/data/SOURCES.md) and [`videos/README.md`](./videos/README.md). No footage was downloaded from YouTube or social media. The annotated "How It Works" clip (`hero_how_it_works.mp4`) is our own HUD recording overlaid on that footage.
+- **Demo video:** the 3-minute submission video was composed with [Remotion](https://www.remotion.dev/) and screen recordings of the live app; it contains only the rights-cleared footage above plus macOS `say` narration.
+
 ## Documentation
 
 - [`AGENTS.md`](./AGENTS.md) — Agent working agreements, workspace map, and compliance guardrails
