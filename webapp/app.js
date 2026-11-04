@@ -149,6 +149,9 @@ const I18N = {
     spec_dd_cooldown: "3.0 s (Anti-chatter)",
     spec_dt_concepts: "Default Concepts",
     spec_dd_concepts: "Snake · Wasp · Bear · Boar · Rockfall · Slippery",
+    spec_dt_backend: "Executed Backend",
+    backend_names: {"meta-sam-3.1": "Meta SAM 3.1 (Meta Model API)", "vertex-bridge": "Vertex AI Gemini bridge (fallback)", "stub": "Recorded fixtures (stub)"},
+    backend_notes: {"meta-sam-3.1": "Real Meta SAM 3.1 masks via the Meta connector.", "vertex-bridge": "Backend notice: the Meta connector is not available on this host, so this scan runs on a Google Vertex AI (Gemini) fallback with bbox-contour tint. Model names above show the intended Meta route.", "stub": "Backend notice: stub mode, no model is called."},
     log_card_title: "Live Detection Log",
     log_standby: "Standby",
     log_empty_standby:
@@ -247,6 +250,9 @@ const I18N = {
     spec_dd_cooldown: "3.0 s (중복 발화 억제)",
     spec_dt_concepts: "기본 감지 개념",
     spec_dd_concepts: "뱀 · 말벌집 · 곰 · 멧돼지 · 낙석 · 미끄럼",
+    spec_dt_backend: "실행 백엔드",
+    backend_names: {"meta-sam-3.1": "Meta SAM 3.1 (Meta Model API)", "vertex-bridge": "Vertex AI Gemini 브리지 (대체 경로)", "stub": "녹화 픽스처 (스텁)"},
+    backend_notes: {"meta-sam-3.1": "Meta 커넥터를 통한 실제 Meta SAM 3.1 마스크.", "vertex-bridge": "백엔드 안내: 이 호스트에는 Meta 커넥터가 없어 Google Vertex AI(Gemini) 대체 경로와 bbox 윤곽 틴트로 스캔합니다. 위 모델명은 의도된 Meta 경로를 나타냅니다.", "stub": "백엔드 안내: 스텁 모드이며 모델을 호출하지 않습니다."},
     log_card_title: "실시간 분할 감지 로그",
     log_standby: "대기 중",
     log_empty_standby:
@@ -345,6 +351,9 @@ const I18N = {
     spec_dd_cooldown: "3.0 s（重複発話抑制）",
     spec_dt_concepts: "基本検知コンセプト",
     spec_dd_concepts: "ヘビ · スズメバチの巣 · クマ · イノシシ · 落石 · 滑りやすい路面",
+    spec_dt_backend: "実行バックエンド",
+    backend_names: {"meta-sam-3.1": "Meta SAM 3.1 (Meta Model API)", "vertex-bridge": "Vertex AI Gemini ブリッジ（代替経路）", "stub": "録画フィクスチャ（スタブ）"},
+    backend_notes: {"meta-sam-3.1": "Metaコネクタ経由の実際のMeta SAM 3.1マスク。", "vertex-bridge": "バックエンド通知: このホストにはMetaコネクタがないため、Google Vertex AI（Gemini）の代替経路とbbox輪郭ティントでスキャンしています。上のモデル名は想定するMeta経路です。", "stub": "バックエンド通知: スタブモードのためモデルは呼び出されません。"},
     log_card_title: "リアルタイム分割検知ログ",
     log_standby: "待機中",
     log_empty_standby:
@@ -722,6 +731,27 @@ function syncModelSpecUI() {
   if (specVerifyMode) {
     specVerifyMode.textContent =
       selectedModel === "sam-3.1" ? t("spec_verify_off") : t("spec_verify_on");
+  }
+  syncBackendUI();
+}
+
+// Honesty badge: show which backend actually serves the selected model on
+// this host (Meta connector vs the Vertex AI fallback vs stub fixtures).
+function syncBackendUI() {
+  const by = (lastStatus && lastStatus.backend_by_model) || {};
+  const backend = by[selectedModel] || (lastStatus && lastStatus.backend) || "";
+  const names = t("backend_names");
+  const notes = t("backend_notes");
+  const specBackend = $("specBackend");
+  const backendNote = $("backendNote");
+  if (specBackend) {
+    specBackend.textContent = (names && names[backend]) || "…";
+    specBackend.dataset.backend = backend;
+  }
+  if (backendNote) {
+    backendNote.textContent = (notes && notes[backend]) || "";
+    backendNote.dataset.backend = backend;
+    backendNote.hidden = !backend;
   }
 }
 
