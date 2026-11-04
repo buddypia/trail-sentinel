@@ -1,8 +1,11 @@
-/* Trail Sentinel · True-Black Flat Optical Field HUD
- * Style: true-black-flat (seed 300941521, dark)
- * Grid arithmetic (1440px desktop):
- *   Main viewfinder column (1fr = 1056px) + 1px rule + Right QR/Spec rail (383px) = 1440px.
- *   Inner padding: 20px; gap: 16px.
+/* Trail Sentinel · Mobile-First Field HUD
+ * Base styles target the phone (single column, 44px+ touch targets,
+ * safe-area aware, viewfinder-first). Wider screens progressively enhance:
+ *   >=700px  : widened single column, 4-KPI row, hero buttons in a row
+ *   >=1025px : desktop presentation layout (phone-width column + side rail)
+ * JS class contract (do not rename): .live .error .fast .warn .danger .off
+ * .detected .stop .primary .open .muted .caution .live-active .demo-bg
+ * .threat-spotlight body.scanning-active
  */
 
 * {
@@ -34,23 +37,31 @@
   --pill-warning-ink: #f3be5c;
   --pill-neutral-bg: #222222;
   --pill-neutral-ink: #ffffff;
-  --radius-card: 8px;
-  --radius-control: 6px;
+  --radius-card: 12px;
+  --radius-control: 8px;
   --radius-pill: 999px;
-  --gap: 16px;
-  --pad: 20px;
-  --control-height: 36px;
+  --gap: 10px;
+  --pad: 12px;
+  --control-height: 44px;
+  --scan-btn-height: 56px;
   --font: "Inter", -apple-system, BlinkMacSystemFont, "Pretendard", "Noto Sans KR", sans-serif;
   --fs-title: 20px;
   --fs-section: 16px;
-  --fs-kpi: 24px;
-  --fs-body: 14px;
-  --fs-small: 12px;
+  --fs-kpi: 22px;
+  --fs-body: 16px;
+  --fs-small: 13px;
+  --sat: env(safe-area-inset-top, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
 }
 
 ::selection {
   background: var(--accent);
   color: var(--ground);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 html, body {
@@ -60,9 +71,16 @@ html, body {
   color: var(--text);
   font-family: var(--font);
   font-size: var(--fs-body);
-  line-height: 1.45;
+  line-height: 1.5;
   overflow-wrap: anywhere;
   -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
+  touch-action: manipulation;
+}
+
+/* overflow-x:clip (not hidden) so sticky bottom bar keeps working */
+body {
+  overflow-x: clip;
 }
 
 html:lang(ko) body {
@@ -78,17 +96,18 @@ html:lang(ko) body {
   flex-direction: column;
   width: 100%;
   min-height: 100dvh;
+  max-width: 100%;
   background: var(--ground);
+  margin: 0 auto;
 }
 
-/* Top Ruled Bar (56px height, 1px bottom rule) */
+/* === Top App Bar (mobile: 2 rows — brand+voice / selects) === */
 .hud-top {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--gap);
-  min-height: 56px;
-  padding: 10px var(--pad);
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: calc(10px + var(--sat)) var(--pad) 10px;
   background: var(--ground);
   border-bottom: 1px solid var(--border);
 }
@@ -96,8 +115,9 @@ html:lang(ko) body {
 .brand-group {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
+  flex: 1 1 auto;
 }
 
 .brand-mark {
@@ -106,8 +126,8 @@ html:lang(ko) body {
 }
 
 .scan-dot {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
   border-radius: var(--radius-pill);
   background: var(--faint);
   flex-shrink: 0;
@@ -123,17 +143,18 @@ html:lang(ko) body {
 .brand-titles {
   display: flex;
   align-items: baseline;
-  gap: 12px;
+  gap: 4px 10px;
   min-width: 0;
   flex-wrap: wrap;
 }
 
 .hud-top h1 {
-  font-size: var(--fs-title);
+  font-size: 18px;
   font-weight: 600;
   letter-spacing: -0.01em;
   color: var(--text);
   line-height: 1.2;
+  white-space: nowrap;
 }
 
 .telemetry {
@@ -142,25 +163,44 @@ html:lang(ko) body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 .hud-actions {
   display: flex;
   align-items: center;
   gap: 8px;
-  flex-shrink: 0;
-  flex-wrap: wrap;
+}
+
+.hud-actions-primary {
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+
+.hud-actions-selects {
+  flex: 1 1 100%;
+  min-width: 0;
 }
 
 .model-select-wrap {
   display: inline-flex;
   align-items: center;
-  height: var(--control-height);
+  min-height: var(--control-height);
   background: var(--surface);
   border: 1px solid var(--control);
   border-radius: var(--radius-control);
   padding: 0 8px 0 10px;
   gap: 6px;
+  min-width: 0;
+}
+
+#langSelectWrap {
+  flex: 0 0 auto;
+}
+
+#modelSelectWrap {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .lang-icon {
@@ -179,17 +219,27 @@ html:lang(ko) body {
   color: var(--text);
   border: none;
   font-family: var(--font);
-  font-size: var(--fs-small);
+  font-size: 14px;
   font-weight: 500;
-  height: 100%;
+  min-height: var(--control-height);
   outline: none;
   cursor: pointer;
+  min-width: 0;
+  max-width: 100%;
+  text-overflow: ellipsis;
+}
+
+#modelSelectWrap .model-select {
+  flex: 1 1 auto;
+  width: 100%;
 }
 
 .latency-pill {
   display: inline-flex;
   align-items: center;
-  height: 28px;
+  justify-content: center;
+  min-height: var(--control-height);
+  min-width: 64px;
   padding: 0 10px;
   font-size: var(--fs-small);
   font-weight: 500;
@@ -197,6 +247,7 @@ html:lang(ko) body {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-control);
+  white-space: nowrap;
 }
 .latency-pill.fast {
   color: var(--pill-positive-ink);
@@ -214,10 +265,11 @@ html:lang(ko) body {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  height: var(--control-height);
+  min-height: var(--control-height);
+  min-width: var(--control-height);
   padding: 0 12px;
   font-family: var(--font);
-  font-size: var(--fs-small);
+  font-size: 14px;
   font-weight: 500;
   color: var(--text);
   background: var(--surface);
@@ -234,43 +286,62 @@ html:lang(ko) body {
   border-color: var(--border);
 }
 
-/* Main Workspace Layout */
+/* QR handoff is desktop-only: the phone user is already on the phone */
+.control-btn.qr-toggle-btn {
+  display: none;
+}
+
+/* === Main Workspace (mobile: single column) === */
 .workspace-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 384px;
+  display: flex;
+  flex-direction: column;
   flex: 1 1 auto;
-  min-height: calc(100dvh - 56px);
+  width: 100%;
+  max-width: 100%;
   background: var(--ground);
 }
 
-/* Left Viewfinder Column */
 .viewfinder {
   display: flex;
   flex-direction: column;
   gap: var(--gap);
   padding: var(--pad);
+  padding-bottom: 0;
   background: var(--ground);
   min-width: 0;
+  width: 100%;
 }
 
-/* Divided 4-KPI Strip */
+/* Viewfinder first on every screen: point camera -> see results */
+.optical-frame {
+  order: -1;
+}
+
+/* 4-KPI Telemetry (mobile: compact 2x2) */
 .kpi-strip {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-card);
+  overflow: hidden;
 }
 
 .kpi-cell {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 12px 16px;
+  justify-content: center;
+  gap: 2px;
+  min-height: 64px;
+  padding: 8px 12px;
   border-right: 1px solid var(--border);
 }
-.kpi-cell:last-child {
+.kpi-cell:nth-child(2n) {
   border-right: none;
+}
+.kpi-cell:nth-child(1),
+.kpi-cell:nth-child(2) {
+  border-bottom: 1px solid var(--border);
 }
 
 .kpi-label {
@@ -302,8 +373,9 @@ html:lang(ko) body {
 /* Optical Rangefinder Stage */
 .optical-frame {
   position: relative;
-  flex: 1 1 auto;
-  min-height: 340px;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  min-height: 300px;
   background: url("/hero_snake_leaves_01.jpg") center / cover no-repeat, var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-card);
@@ -311,6 +383,7 @@ html:lang(ko) body {
   display: flex;
   align-items: center;
   justify-content: center;
+  scroll-margin-top: 8px;
 }
 
 .viewfinder.live-active .optical-frame {
@@ -352,7 +425,6 @@ html:lang(ko) body {
   z-index: 4;
 }
 
-/* Precision Optical Reticle (No dashed circle slop) */
 .reticle {
   position: absolute;
   left: 50%;
@@ -390,13 +462,15 @@ html:lang(ko) body {
   position: absolute;
   bottom: 10px;
   left: 10px;
+  right: 10px;
   z-index: 12;
   background: rgba(43, 36, 20, 0.92);
   color: var(--pill-warning-ink);
   border: 1px solid var(--warning);
   font-size: var(--fs-small);
   font-weight: 500;
-  padding: 4px 10px;
+  line-height: 1.35;
+  padding: 8px 10px;
   border-radius: var(--radius-control);
 }
 
@@ -410,8 +484,13 @@ html:lang(ko) body {
   border: 1px solid var(--warning);
   font-size: var(--fs-small);
   font-weight: 500;
-  padding: 4px 10px;
+  padding: 8px 10px;
   border-radius: var(--radius-control);
+}
+
+/* When both badges show, stack them instead of overlapping */
+.demo-badge:not([hidden]) ~ .unknown-badge:not([hidden]) {
+  bottom: 56px;
 }
 
 .alert-banner {
@@ -420,20 +499,31 @@ html:lang(ko) body {
   left: 0;
   right: 0;
   z-index: 15;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 52px;
   background: rgba(44, 26, 32, 0.95);
   border-bottom: 2px solid var(--negative);
   color: var(--text);
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
   text-align: center;
-  padding: 8px 14px;
-  line-height: 1.3;
+  padding: 10px 12px;
+  line-height: 1.35;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.65);
 }
 .alert-banner.caution {
   background: rgba(43, 36, 20, 0.95);
   border-bottom-color: var(--warning);
   color: var(--pill-warning-ink);
+}
+
+/* display:flex above overrides the hidden attribute — restore it explicitly */
+.alert-banner[hidden],
+.demo-badge[hidden],
+.unknown-badge[hidden] {
+  display: none;
 }
 
 /* Standby Instrument Panel inside Viewfinder */
@@ -454,22 +544,21 @@ html:lang(ko) body {
 
 .start-card {
   width: 100%;
-  max-width: 880px;
+  max-width: 560px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-card);
-  padding: var(--pad);
-  display: grid;
-  grid-template-columns: minmax(0, 1.45fr) minmax(240px, 0.85fr);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
   gap: var(--gap);
-  align-items: stretch;
 }
 
 .start-main {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
   gap: 10px;
+  min-width: 0;
 }
 
 .hero-showcase-box {
@@ -504,14 +593,14 @@ html:lang(ko) body {
 }
 
 .verify-speed-select {
-  height: 24px;
-  padding: 0 6px;
+  min-height: var(--control-height);
+  padding: 0 8px;
   background: var(--raised);
   color: var(--text);
   border: 1px solid var(--control);
-  border-radius: 4px;
+  border-radius: var(--radius-control);
   font-family: var(--font);
-  font-size: 11px;
+  font-size: 14px;
   cursor: pointer;
 }
 
@@ -519,7 +608,6 @@ html:lang(ko) body {
   position: relative;
   width: 100%;
   aspect-ratio: 16 / 9;
-  max-height: 220px;
   background: #000000;
   border: 1px solid var(--border);
   border-radius: 4px;
@@ -556,24 +644,36 @@ html:lang(ko) body {
 }
 
 .start-copy {
-  font-size: var(--fs-body);
+  font-size: 15px;
   color: var(--muted);
   line-height: 1.5;
 }
 
+/* Hero actions: full-width thumb buttons on the phone */
 .hero-btn-group {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 8px;
-  margin-top: 4px;
+  margin-top: 2px;
 }
 
-/* Primary inverted button (True-Black Flat move: white fill, black text) */
+.hero-btn-group .primary-btn,
+.hero-btn-group .secondary-btn {
+  width: 100%;
+  min-height: 52px;
+  height: auto;
+  padding: 12px 14px;
+  white-space: normal;
+  text-align: center;
+  line-height: 1.35;
+  font-size: 16px;
+}
+
 .primary-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: var(--control-height);
+  min-height: var(--control-height);
   padding: 0 16px;
   font-family: var(--font);
   font-size: var(--fs-body);
@@ -598,7 +698,7 @@ html:lang(ko) body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: var(--control-height);
+  min-height: var(--control-height);
   padding: 0 14px;
   font-family: var(--font);
   font-size: var(--fs-body);
@@ -614,15 +714,14 @@ html:lang(ko) body {
   border-color: var(--muted);
 }
 
-/* In-App Standby QR Box */
+/* In-app QR handoff lives on desktop only (phone users are already here) */
 .start-qr-box {
+  display: none;
   background: var(--raised);
   border: 1px solid var(--border);
   border-radius: var(--radius-card);
   padding: 14px;
-  display: flex;
   flex-direction: column;
-  justify-content: space-between;
   gap: 10px;
 }
 
@@ -647,6 +746,8 @@ html:lang(ko) body {
   font-size: var(--fs-small);
   font-weight: 500;
   cursor: pointer;
+  min-height: var(--control-height);
+  padding: 0 4px;
 }
 
 .start-qr-row {
@@ -695,17 +796,17 @@ html:lang(ko) body {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-card);
-  padding: 14px 16px;
+  padding: 12px;
   display: flex;
   flex-direction: column;
   gap: 12px;
+  margin-bottom: var(--pad);
 }
 
 .chips-bar {
   display: flex;
   align-items: center;
   gap: 8px;
-  flex-wrap: wrap;
 }
 
 .chips-label {
@@ -717,9 +818,13 @@ html:lang(ko) body {
 .chips {
   display: flex;
   flex: 1 1 auto;
-  gap: 6px;
+  min-width: 0;
+  gap: 8px;
   overflow-x: auto;
   scrollbar-width: none;
+  scroll-snap-type: x proximity;
+  padding: 2px;
+  margin: -2px;
 }
 .chips::-webkit-scrollbar {
   display: none;
@@ -727,14 +832,15 @@ html:lang(ko) body {
 
 .chip {
   flex: 0 0 auto;
+  scroll-snap-align: start;
   display: inline-flex;
   align-items: center;
-  height: 28px;
-  padding: 0 10px;
+  min-height: var(--control-height);
+  padding: 0 14px;
   background: var(--raised);
   border: 1px solid var(--control);
   border-radius: var(--radius-control);
-  font-size: var(--fs-small);
+  font-size: 14px;
   font-weight: 500;
   color: var(--text);
   cursor: pointer;
@@ -747,10 +853,10 @@ html:lang(ko) body {
   border-color: var(--border);
 }
 .chip.sev3 {
-  border-left: 2px solid var(--negative);
+  border-left: 3px solid var(--negative);
 }
 .chip.sev2 {
-  border-left: 2px solid var(--warning);
+  border-left: 3px solid var(--warning);
 }
 .chip.detected {
   background: var(--pill-negative-bg);
@@ -760,13 +866,13 @@ html:lang(ko) body {
 
 .add-concept-chip {
   flex: 0 0 auto;
-  height: 28px;
-  padding: 0 10px;
+  min-height: var(--control-height);
+  padding: 0 14px;
   background: var(--surface);
   border: 1px solid var(--control);
   border-radius: var(--radius-control);
   font-family: var(--font);
-  font-size: var(--fs-small);
+  font-size: 14px;
   font-weight: 500;
   color: var(--text);
   cursor: pointer;
@@ -776,61 +882,66 @@ html:lang(ko) body {
   background: var(--raised);
 }
 
-/* F7 Live Custom Concept Form */
+/* F7 Live Custom Concept Form (stacked: 16px inputs prevent iOS zoom) */
 .concept-form {
   display: flex;
+  flex-direction: column;
   gap: 8px;
-  align-items: center;
-  flex-wrap: wrap;
 }
 .concept-form[hidden] {
   display: none;
 }
 .concept-form input {
-  flex: 1 1 160px;
-  min-width: 0;
-  height: var(--control-height);
+  width: 100%;
+  min-height: 48px;
   background: var(--ground);
   border: 1px solid var(--control);
   border-radius: var(--radius-control);
   padding: 0 12px;
   font-family: var(--font);
   color: var(--text);
-  font-size: var(--fs-body);
+  font-size: 16px;
 }
 .concept-form input::placeholder {
   color: var(--faint);
   opacity: 1;
 }
 
+/* Sticky thumb-reach scan bar (respects home-indicator safe area) */
 .dock-row {
+  position: sticky;
+  bottom: 0;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
-  padding-top: 8px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  padding-top: 12px;
+  padding-bottom: var(--sab);
   border-top: 1px solid var(--rule);
+  background: var(--surface);
 }
 
 .dock-actions {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: stretch;
   gap: 8px;
+  width: 100%;
 }
 
 .scan-toggle-btn {
-  height: var(--control-height);
+  min-height: var(--scan-btn-height);
   padding: 0 18px;
   font-family: var(--font);
-  font-size: var(--fs-body);
-  font-weight: 600;
+  font-size: 17px;
+  font-weight: 700;
   border: 1px solid var(--text);
   border-radius: var(--radius-pill);
   cursor: pointer;
   color: var(--ground);
   background: var(--text);
   white-space: nowrap;
+  width: 100%;
 }
 .scan-toggle-btn.active,
 .scan-toggle-btn.stop {
@@ -840,10 +951,10 @@ html:lang(ko) body {
 }
 
 .demo-toggle-btn {
-  height: var(--control-height);
+  min-height: 48px;
   padding: 0 14px;
   font-family: var(--font);
-  font-size: var(--fs-body);
+  font-size: 15px;
   font-weight: 500;
   color: var(--text);
   background: var(--raised);
@@ -851,21 +962,33 @@ html:lang(ko) body {
   border-radius: var(--radius-pill);
   cursor: pointer;
   white-space: nowrap;
+  width: 100%;
+}
+.demo-toggle-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
 }
 
 .safety-line {
   font-size: var(--fs-small);
   color: var(--muted);
-  line-height: 1.4;
+  line-height: 1.45;
 }
 
-/* Right Instrument & QR Rail */
+/* Instrument & Log Rail: inline flow on phone, side rail on desktop */
 .qr-panel {
   background: var(--ground);
-  border-left: 1px solid var(--border);
-  padding: var(--pad);
+  padding: 0 var(--pad) calc(var(--pad) + var(--sab));
   display: flex;
   flex-direction: column;
+  min-width: 0;
+}
+
+/* QR handoff card is pointless on the phone itself — desktop only.
+ * Compound selector beats the later .rail-card display:flex (equal
+ * specificity would lose by source order). */
+.rail-card.qr-card {
+  display: none;
 }
 
 .qr-sheet-inner {
@@ -880,10 +1003,10 @@ html:lang(ko) body {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-card);
-  padding: var(--pad);
+  padding: 14px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
 }
 
 .log-card {
@@ -905,9 +1028,10 @@ html:lang(ko) body {
 .log-empty {
   font-size: var(--fs-small);
   color: var(--muted);
-  padding: 10px 12px;
+  padding: 12px;
   border: 1px dashed var(--control);
   border-radius: var(--radius-control);
+  line-height: 1.45;
 }
 
 .log-row {
@@ -915,11 +1039,11 @@ html:lang(ko) body {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  min-height: 36px;
-  padding: 6px 10px;
+  min-height: var(--control-height);
+  padding: 8px 10px;
   background: var(--raised);
   border-radius: var(--radius-control);
-  font-size: var(--fs-small);
+  font-size: 14px;
 }
 .log-row.crit {
   background: rgba(44, 26, 32, 0.72);
@@ -939,7 +1063,7 @@ html:lang(ko) body {
   font-weight: 600;
 }
 
-/* Promote Live Detection Log to top of Right Rail during active scanning */
+/* Promote Live Detection Log above specs during active scanning */
 body.scanning-active .log-card {
   order: -1;
   border-color: #2c2c2c;
@@ -958,23 +1082,15 @@ body.scanning-active .log-card {
   color: var(--text);
 }
 
+/* No modal on any screen: rail is inline (phone) or a side column (desktop) */
 .close-qr-btn {
   display: none;
-  height: 28px;
-  padding: 0 10px;
-  background: var(--raised);
-  border: 1px solid var(--control);
-  border-radius: var(--radius-control);
-  color: var(--text);
-  font-family: var(--font);
-  font-size: var(--fs-small);
-  cursor: pointer;
 }
 
 .qr-desc {
-  font-size: var(--fs-body);
+  font-size: 15px;
   color: var(--muted);
-  line-height: 1.45;
+  line-height: 1.5;
 }
 
 .qr-frame-row {
@@ -1019,7 +1135,6 @@ body.scanning-active .log-card {
   flex-shrink: 0;
 }
 
-/* Joined URL Input + Copy Button (§8.1 rule: shared border, squared inner corners) */
 .joined-url-bar {
   display: flex;
   align-items: stretch;
@@ -1031,7 +1146,7 @@ body.scanning-active .log-card {
   min-width: 0;
   display: flex;
   align-items: center;
-  height: var(--control-height);
+  min-height: var(--control-height);
   padding: 0 10px;
   background: var(--ground);
   border: 1px solid var(--control);
@@ -1047,8 +1162,8 @@ body.scanning-active .log-card {
 
 .copy-btn {
   flex: 0 0 auto;
-  height: var(--control-height);
-  padding: 0 12px;
+  min-height: var(--control-height);
+  padding: 0 14px;
   font-family: var(--font);
   font-size: var(--fs-small);
   font-weight: 600;
@@ -1063,8 +1178,8 @@ body.scanning-active .log-card {
 .status-tag {
   display: inline-flex;
   align-items: center;
-  height: 22px;
-  padding: 0 8px;
+  min-height: 28px;
+  padding: 0 10px;
   font-size: var(--fs-small);
   font-weight: 500;
   background: var(--pill-positive-bg);
@@ -1084,8 +1199,8 @@ body.scanning-active .log-card {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  min-height: 36px;
-  padding: 6px 0;
+  min-height: var(--control-height);
+  padding: 8px 0;
   border-bottom: 1px solid var(--rule);
   font-size: var(--fs-small);
 }
@@ -1103,249 +1218,141 @@ body.scanning-active .log-card {
   text-align: right;
 }
 
-/* Desktop 100dvh Viewport Containment & Single-QR Optimization */
-@media (min-width: 1025px) {
-  .hud-top {
-    height: 56px;
-  }
-  .workspace-grid {
-    height: calc(100dvh - 56px);
-    max-height: calc(100dvh - 56px);
-    overflow: hidden;
-  }
-  .viewfinder {
-    height: 100%;
-    padding: 12px 16px;
-    gap: 10px;
-    overflow: hidden;
-  }
-  .kpi-cell {
-    padding: 9px 14px;
-    gap: 2px;
-  }
-  .kpi-value {
-    font-size: 21px;
-  }
-  .optical-frame {
-    flex: 1 1 0;
-    min-height: 0;
-  }
-  .start-overlay {
-    padding: 12px 16px;
-  }
-  .start-qr-box {
-    display: none;
-  }
-  .start-card {
-    grid-template-columns: minmax(0, 1fr);
-    max-width: 720px;
-    padding: 14px 18px;
-    gap: 10px;
-  }
-  .start-main {
-    gap: 8px;
-  }
-  .start-copy {
-    font-size: 13px;
-    line-height: 1.4;
-  }
-  .hero-showcase-box {
-    padding: 6px 10px 8px;
-    gap: 5px;
-  }
-  .hero-showcase-video-wrap {
-    max-height: 205px;
-  }
-  .hud-bottom {
-    padding: 10px 14px;
-    gap: 8px;
-    flex-shrink: 0;
-  }
-  .dock-row {
-    padding-top: 6px;
-  }
-  .qr-panel {
-    height: 100%;
-    padding: 12px 16px;
-    overflow-y: auto;
-  }
-  .qr-sheet-inner {
-    gap: 10px;
-  }
-  .rail-card {
-    padding: 12px 14px;
-    gap: 8px;
-  }
-  .qr-desc {
-    font-size: 12px;
-    line-height: 1.35;
-  }
-  .qr-frame {
-    padding: 6px;
-  }
-  .qr-frame img {
-    width: 104px;
-    height: 104px;
-  }
-  .qr-steps {
-    gap: 4px;
-  }
-  .spec-row {
-    min-height: 26px;
-    padding: 4px 0;
-  }
-}
-
-/* Responsive Breakpoints (Tablet & Phone §12) */
-@media (max-width: 1024px) {
-  .workspace-grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .qr-panel {
-    position: fixed;
-    inset: 0;
-    z-index: 50;
-    background: rgba(0, 0, 0, 0.88);
-    border-left: none;
-    align-items: center;
-    justify-content: center;
-    overflow-y: auto;
-    display: none;
-  }
-  .qr-panel.open {
-    display: flex;
-  }
-  .qr-sheet-inner {
-    max-width: 440px;
-  }
-  .close-qr-btn {
-    display: inline-flex;
-    align-items: center;
-  }
-}
-
-@media (max-width: 680px) {
+/* === >=700px: widened single column === */
+@media (min-width: 700px) {
   :root {
-    --pad: 12px;
-    --gap: 8px;
+    --pad: 16px;
+    --gap: 12px;
   }
-  html,
-  body,
-  .app-shell,
-  .workspace-grid,
-  .viewfinder {
-    max-width: 100%;
-    overflow-x: hidden;
-  }
-  .hud-top {
-    flex-wrap: wrap;
-    padding: 8px 12px;
-    gap: 8px;
+  .app-shell {
+    max-width: 720px;
   }
   .hud-top h1 {
-    font-size: 16px;
-    white-space: nowrap;
-  }
-  .hud-actions {
-    width: 100%;
-    gap: 4px;
-    flex-wrap: nowrap;
-  }
-  .telemetry,
-  .latency-pill,
-  .model-select-prefix {
-    display: none;
-  }
-  .model-select-wrap {
-    height: 32px;
-    padding: 0 5px;
-  }
-  .lang-select-wrap {
-    flex: 0 0 auto;
-  }
-  .lang-select-wrap .model-select {
-    max-width: 82px;
-    font-size: 11px;
-  }
-  #modelSelectWrap {
-    flex: 1 1 0;
-    min-width: 0;
-  }
-  #modelSelectWrap .model-select {
-    width: 100%;
-    max-width: 100%;
-    font-size: 11px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .control-btn {
-    height: 32px;
-    padding: 0 7px;
-    font-size: 11px;
-    gap: 4px;
-    flex-shrink: 0;
+    font-size: var(--fs-title);
   }
   .kpi-strip {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
   .kpi-cell {
-    padding: 8px 10px;
-    gap: 2px;
+    border-bottom: none;
   }
-  .kpi-value {
-    font-size: 18px;
+  .kpi-cell:nth-child(2n) {
+    border-right: 1px solid var(--border);
   }
-  .kpi-cell:nth-child(2) {
+  .kpi-cell:last-child {
     border-right: none;
   }
   .kpi-cell:nth-child(1),
   .kpi-cell:nth-child(2) {
-    border-bottom: 1px solid var(--border);
+    border-bottom: none;
   }
   .optical-frame {
-    min-height: 290px;
+    min-height: 360px;
   }
-  .alert-banner {
-    font-size: 14px;
-    padding: 7px 10px;
-  }
-  .start-overlay {
-    padding: 10px;
-  }
-  .start-card {
-    grid-template-columns: minmax(0, 1fr);
-    padding: 12px;
-    gap: 10px;
+  .hero-btn-group {
+    flex-direction: row;
+    flex-wrap: wrap;
   }
   .hero-btn-group .primary-btn,
   .hero-btn-group .secondary-btn {
-    width: 100%;
-    white-space: normal;
-    text-align: center;
-    height: auto;
-    min-height: 36px;
-    padding: 8px 12px;
-    line-height: 1.3;
+    width: auto;
+    flex: 1 1 auto;
   }
-  .start-qr-box {
-    padding: 10px 12px;
+  .concept-form {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
   }
-  .qr-thumb-wrap img {
-    width: 68px;
-    height: 68px;
-  }
-  .qr-frame-row {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  .dock-row {
-    flex-direction: column;
-    align-items: stretch;
+  .concept-form input {
+    flex: 1 1 160px;
   }
   .dock-actions {
-    width: 100%;
+    flex-direction: row;
+  }
+  .scan-toggle-btn,
+  .demo-toggle-btn {
+    width: auto;
   }
   .scan-toggle-btn {
     flex: 1 1 auto;
+  }
+}
+
+/* === >=1025px: desktop presentation (phone-width column + side rail) === */
+@media (min-width: 1025px) {
+  .app-shell {
+    max-width: 1060px;
+  }
+  .hud-top {
+    flex-wrap: nowrap;
+  }
+  .hud-actions-selects {
+    flex: 0 1 auto;
+    margin-left: auto;
+  }
+  .hud-actions-primary {
+    margin-left: 0;
+    order: 3;
+  }
+  #modelSelectWrap {
+    max-width: 340px;
+  }
+  .workspace-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 560px) minmax(300px, 400px);
+    justify-content: center;
+    align-items: start;
+    gap: 16px;
+    padding: 16px;
+  }
+  .viewfinder {
+    padding: 0;
+  }
+  .hud-bottom {
+    margin-bottom: 0;
+  }
+  .qr-panel {
+    position: static;
+    padding: 0;
+  }
+  .rail-card.qr-card {
+    display: flex;
+  }
+  .qr-frame img {
+    width: 120px;
+    height: 120px;
+  }
+  .start-qr-box {
+    display: flex;
+  }
+  .start-card {
+    max-width: 640px;
+  }
+  .dock-row {
+    position: static;
+    padding-bottom: 0;
+  }
+}
+
+/* Narrow phones: icon-only voice button keeps 44px target without crowding */
+@media (max-width: 379px) {
+  #audioLabel {
+    display: none;
+  }
+  .hud-actions-primary .control-btn {
+    padding: 0;
+  }
+}
+
+/* Vestigial modal hooks (JS still toggles .open; layout no longer needs it) */
+.qr-panel.open {
+  display: flex;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
   }
 }

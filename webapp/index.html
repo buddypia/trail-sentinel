@@ -2,13 +2,21 @@
 <html lang="en" data-theme="dark">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Trail Sentinel · Meta SAM 3.1 mobile-first real-time trail hazard HUD. Point your phone camera at a trail for pixel-level hazard segmentation with voice and haptic alerts.">
+<meta name="theme-color" content="#000000">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Trail Sentinel">
 <title>Trail Sentinel · Meta SAM 3.1 Real-Time Trail Hazard HUD</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%23000'/%3E%3Cpath d='M8 2.5L14 13H2L8 2.5Z' stroke='%23c6f24e' stroke-width='1.5' fill='none'/%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="manifest" href="manifest.webmanifest">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=20261103d">
+<link rel="stylesheet" href="style.css?v=20261103e">
 </head>
 <body>
 <div class="app-shell" data-ui>
@@ -27,7 +35,27 @@
       </div>
     </div>
 
-    <div class="hud-actions">
+    <div class="hud-actions hud-actions-primary">
+      <button id="btnAudio" type="button" class="control-btn" title="Toggle voice alerts">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <path d="M3 6H6L10 2.5V13.5L6 10H3V6Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+          <path d="M12.5 5.5C13.3 6.3 13.3 9.7 12.5 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        <span id="audioLabel">Voice On</span>
+      </button>
+
+      <button id="btnQrModal" type="button" class="control-btn qr-toggle-btn" title="Open mobile access QR code">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <rect x="2" y="2" width="4.5" height="4.5" stroke="currentColor" stroke-width="1.5"/>
+          <rect x="9.5" y="2" width="4.5" height="4.5" stroke="currentColor" stroke-width="1.5"/>
+          <rect x="2" y="9.5" width="4.5" height="4.5" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M9.5 9.5H11.5V11.5H9.5V9.5ZM12 12H14V14H12V12ZM9.5 12.5H11V14H9.5V12.5ZM12.5 9.5H14V11H12.5V9.5Z" fill="currentColor"/>
+        </svg>
+        <span data-i18n="qr_btn">Mobile QR</span>
+      </button>
+    </div>
+
+    <div class="hud-actions hud-actions-selects">
       <label class="model-select-wrap lang-select-wrap" for="langSelect" id="langSelectWrap" title="Switch UI & Voice Language">
         <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true" class="lang-icon">
           <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.4"/>
@@ -53,24 +81,6 @@
       </label>
 
       <span id="latencyPill" class="latency-pill num">- ms</span>
-
-      <button id="btnAudio" type="button" class="control-btn" title="Toggle voice alerts">
-        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-          <path d="M3 6H6L10 2.5V13.5L6 10H3V6Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
-          <path d="M12.5 5.5C13.3 6.3 13.3 9.7 12.5 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-        </svg>
-        <span id="audioLabel">Voice On</span>
-      </button>
-
-      <button id="btnQrModal" type="button" class="control-btn qr-toggle-btn" title="Open mobile access QR code">
-        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-          <rect x="2" y="2" width="4.5" height="4.5" stroke="currentColor" stroke-width="1.5"/>
-          <rect x="9.5" y="2" width="4.5" height="4.5" stroke="currentColor" stroke-width="1.5"/>
-          <rect x="2" y="9.5" width="4.5" height="4.5" stroke="currentColor" stroke-width="1.5"/>
-          <path d="M9.5 9.5H11.5V11.5H9.5V9.5ZM12 12H14V14H12V12ZM9.5 12.5H11V14H9.5V12.5ZM12.5 9.5H14V11H12.5V9.5Z" fill="currentColor"/>
-        </svg>
-        <span data-i18n="qr_btn">Mobile QR</span>
-      </button>
     </div>
   </header>
 
@@ -278,6 +288,6 @@
   </div>
 </div>
 
-<script src="app.js?v=20261103d"></script>
+<script src="app.js?v=20261103e"></script>
 </body>
 </html>
