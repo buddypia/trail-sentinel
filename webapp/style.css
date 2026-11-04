@@ -1510,3 +1510,23 @@ body.scanning-active .log-card {
     scroll-behavior: auto !important;
   }
 }
+
+/* Backend honesty badge (which backend actually served the scan) */
+.backend-note {
+  margin: 8px 0 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #ffd9a0;
+  background: rgba(229, 169, 59, 0.12);
+  border: 1px solid rgba(229, 169, 59, 0.45);
+}
+.backend-note[data-backend="meta-sam-3.1"] {
+  color: #c6f24e;
+  background: rgba(198, 242, 78, 0.1);
+  border-color: rgba(198, 242, 78, 0.4);
+}
+.backend-note[hidden] { display: none; }
+.backend-dd[data-backend="vertex-bridge"] { color: #e5a93b; }
+.backend-dd[data-backend="meta-sam-3.1"] { color: #c6f24e; }

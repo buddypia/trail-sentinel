@@ -261,6 +261,7 @@ class LiveScanner:
         if chosen_lang not in ("en", "ja", "ko"):
             chosen_lang = "en"
         base = {"mode": "live", "model": chosen_model,
+                "backend": backend_for(chosen_model),
                 "calls_today": self._budget.used_today(),
                 "cap": self._budget.daily_cap}
         if not keys:
@@ -346,6 +347,7 @@ class LiveScanner:
         model_info = MODEL_BY_ID.get(chosen_model, MODEL_BY_ID[DEFAULT_MODEL_ID])
         base = {"mode": "live", "model": chosen_model,
                 "model_label": model_info["short_label"],
+                "backend": backend_for(chosen_model),
                 "frame_index": seq, "latency_ms": latency_ms,
                 "calls_today": self._budget.used_today(),
                 "cap": self._budget.daily_cap}
@@ -422,8 +424,25 @@ if LIVE_ENABLED:
     threading.Thread(target=lambda: get_adc_access_token(), daemon=True).start()
 
 
+def backend_for(model_id: str) -> str:
+    """Which backend actually serves ``model_id`` on this host (honesty badge).
+
+    ``meta-sam-3.1``: real Meta Model API SAM 3.1 via the connector helper
+    (only the pure ``sam-3.1`` route, only where the helper exists).
+    ``vertex-bridge``: single-pass Google Vertex AI (Gemini) fallback used by
+    every other live route, including on the keyless Cloud Run deployment.
+    """
+    if not LIVE_ENABLED:
+        return "stub"
+    if model_id == "sam-3.1" and resolve_helper_path().is_file():
+        return "meta-sam-3.1"
+    return "vertex-bridge"
+
+
 def status() -> dict:
     return {
+        "backend": backend_for(_active_model_id),
+        "backend_by_model": {m["id"]: backend_for(m["id"]) for m in AVAILABLE_MODELS},
         "mode": "live" if LIVE_ENABLED else "stub",
         "engine": _active_model_id if LIVE_ENABLED else "stub",
         "live_enabled": LIVE_ENABLED,
@@ -608,6 +627,6 @@ class Handler(SimpleHTTPRequestHandler):
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", "8765"))
-    mode = "live (real SAM 3.1)" if LIVE_ENABLED else "stub"
+    mode = "live" if LIVE_ENABLED else "stub"
     print(f"Trail Sentinel web app → http://localhost:{port}  (mode: {mode})")
     ThreadingHTTPServer(("0.0.0.0", port), Handler).serve_forever()
