@@ -26,6 +26,7 @@ from __future__ import annotations
 import base64
 import http.client
 import json
+import math
 import os
 import subprocess
 import threading
@@ -276,6 +277,93 @@ def synthesize_contour_mask_png(
 
 
 # === [FEAT:F2] Single-Pass Multi-Concept Vision & Semantic Verification ======
+def _detections_from_parsed(parsed: Any) -> list[Any]:
+    if isinstance(parsed, list):
+        if parsed and isinstance(parsed[0], dict) and "detections" in parsed[0]:
+            inner = parsed[0].get("detections")
+            return list(inner) if isinstance(inner, list) else []
+        return list(parsed)
+    if isinstance(parsed, dict):
+        inner = parsed.get("detections")
+        return list(inner) if isinstance(inner, list) else []
+    return []
+
+
+def _matching_brace(text: str, start: int) -> int | None:
+    """Index just past the ``}`` matching the ``{`` at ``start`` (string-aware)."""
+    depth = 0
+    in_str = False
+    escaped = False
+    for i in range(start, len(text)):
+        ch = text[i]
+        if in_str:
+            if escaped:
+                escaped = False
+            elif ch == "\\":
+                escaped = True
+            elif ch == '"':
+                in_str = False
+            continue
+        if ch == '"':
+            in_str = True
+        elif ch == "{":
+            depth += 1
+        elif ch == "}":
+            depth -= 1
+            if depth == 0:
+                return i + 1
+    return None
+
+
+def _extract_detection_items(text: str) -> list[Any]:
+    """Model output -> raw detection items, salvaging what is salvageable.
+
+    The bridge caps output at 160 tokens (fast-path contract), so a frame
+    with several hazards can end mid-object; the model may also wrap JSON
+    in a fence or prose. Strict ``json.loads`` on the whole text turned
+    every such frame into a total scan failure — valid snake/bear
+    detections already present in the text were lost (no tint, error
+    badge). Recovery order: whole-text JSON (fences/prose stripped),
+    then each complete detection object in the text, so only the
+    truncated tail object is dropped, never the whole frame.
+    """
+    cleaned = text.strip()
+    if cleaned.startswith("```"):
+        cleaned = cleaned.split("\n", 1)[-1] if "\n" in cleaned else cleaned[3:]
+        if cleaned.rstrip().endswith("```"):
+            cleaned = cleaned.rstrip()[:-3]
+    candidates = [cleaned]
+    first = min(
+        (i for i in (cleaned.find("{"), cleaned.find("[")) if i >= 0),
+        default=-1,
+    )
+    if first > 0:
+        candidates.append(cleaned[first:])
+    for candidate in candidates:
+        try:
+            return _detections_from_parsed(json.loads(candidate))
+        except (json.JSONDecodeError, ValueError):
+            continue
+    salvaged: list[Any] = []
+    i = 0
+    while True:
+        start = cleaned.find("{", i)
+        if start < 0:
+            break
+        end = _matching_brace(cleaned, start)
+        if end is None:
+            i = start + 1  # unclosed (truncated) object: look inside it
+            continue
+        try:
+            obj = json.loads(cleaned[start:end])
+        except (json.JSONDecodeError, ValueError):
+            obj = None
+        if isinstance(obj, dict) and "concept" in obj:
+            salvaged.append(obj)
+        i = end
+    return salvaged
+
+
 def scan_with_vertex_vision(
     image_bytes: bytes,
     media_type: str,
@@ -363,6 +451,8 @@ def scan_with_vertex_vision(
     status_code = 0
     # Fail fast (single attempt): the scan loop issues the next frame
     # immediately, so an in-call retry only doubles worst-case latency.
+    # A transport failure must surface as itself: swallowing it here used
+    # to fall through to a misleading "HTTP 0" error with an empty body.
     for attempt in range(1):
         conn = _get_https_connection()
         try:
@@ -373,8 +463,7 @@ def scan_with_vertex_vision(
             break
         except Exception:
             _reset_https_connection()
-            if attempt == 1:
-                raise
+            raise
 
     if status_code != 200:
         raise RuntimeError(
@@ -382,7 +471,12 @@ def scan_with_vertex_vision(
             f"{raw_body.decode('utf-8', errors='replace')[:200]}"
         )
 
-    resp_json = json.loads(raw_body.decode("utf-8"))
+    try:
+        resp_json = json.loads(raw_body.decode("utf-8"))
+    except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+        raise RuntimeError("Vision bridge returned a non-JSON response") from exc
+    if not isinstance(resp_json, dict):
+        return [], {}
     candidates = resp_json.get("candidates") or []
     if not candidates:
         return [], {}
@@ -391,17 +485,7 @@ def scan_with_vertex_vision(
     if not text:
         return [], {}
 
-    parsed = json.loads(text)
-    if isinstance(parsed, list):
-        raw_dets = (
-            parsed[0].get("detections", parsed)
-            if parsed and isinstance(parsed[0], dict) and "detections" in parsed[0]
-            else parsed
-        )
-    elif isinstance(parsed, dict):
-        raw_dets = parsed.get("detections") or []
-    else:
-        raw_dets = []
+    raw_dets = _extract_detection_items(text)
 
     detections: list[Detection] = []
     verify_notes: dict[str, str] = {}
@@ -418,7 +502,12 @@ def scan_with_vertex_vision(
         box = item.get("box_2d") or item.get("bbox")
         if not isinstance(box, (list, tuple)) or len(box) != 4:
             continue
-        y1, x1, y2, x2 = (float(v) for v in box)
+        try:
+            y1, x1, y2, x2 = (float(v) for v in box)
+        except (TypeError, ValueError):
+            continue  # one malformed box must not lose the valid hazards
+        if not all(math.isfinite(v) for v in (y1, x1, y2, x2)):
+            continue  # NaN/inf would corrupt the bbox and the JSON payload
         scale = 1000.0 if max(abs(x1), abs(y1), abs(x2), abs(y2)) > 1.0 else 1.0
         nx = max(0.0, min(1.0, min(x1, x2) / scale))
         ny = max(0.0, min(1.0, min(y1, y2) / scale))
@@ -430,13 +519,21 @@ def scan_with_vertex_vision(
         clock_dir = 11 if center_x <= 0.38 else (1 if center_x >= 0.62 else 12)
 
         raw_dist = item.get("distance_m")
-        model_dist = float(raw_dist) if isinstance(raw_dist, (int, float)) else None
+        model_dist = (
+            float(raw_dist)
+            if isinstance(raw_dist, (int, float))
+            and not isinstance(raw_dist, bool)
+            and math.isfinite(float(raw_dist))
+            else None
+        )
         dist_m = estimate_visual_distance_m(norm_bbox, model_dist)
 
         conf_val = item.get("confidence")
         confidence = (
             round(max(0.0, min(1.0, float(conf_val))), 2)
             if isinstance(conf_val, (int, float))
+            and not isinstance(conf_val, bool)
+            and math.isfinite(float(conf_val))
             else None
             if model_id == "sam-3.1"
             else 0.92

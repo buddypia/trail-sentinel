@@ -14,6 +14,7 @@ distance estimator. SAM returns no confidence and no distance, so
 from __future__ import annotations
 
 import json
+import math
 from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -263,7 +264,25 @@ class RealSAMClient:
             )
 
         confidence_value = record.get("confidence")
+        # A malformed mask must not kill an otherwise valid detection:
+        # drop the mask pair instead (the server synthesizes a tint
+        # fallback for SAM routes when no pixel mask survives).
+        mask_png = record.get("mask_png")
+        mask_rect: list[float] | None = None
         mask_rect_value = record.get("mask_rect")
+        if mask_png is not None and mask_rect_value is not None:
+            try:
+                parsed_rect = [float(v) for v in mask_rect_value]
+            except (TypeError, ValueError):
+                parsed_rect = []
+            if len(parsed_rect) == 4 and all(
+                math.isfinite(v) for v in parsed_rect
+            ):
+                mask_rect = parsed_rect
+            else:
+                mask_png = None
+        else:
+            mask_png = None
         return Detection(
             concept=concept,
             frame_idx=request.frame_idx,
@@ -274,10 +293,6 @@ class RealSAMClient:
             clock_direction=int(record.get("clock_direction", 12)),
             track_id=str(record["track_id"]),
             bbox=bbox,
-            mask_png=record.get("mask_png"),
-            mask_rect=(
-                [float(v) for v in mask_rect_value]
-                if mask_rect_value is not None
-                else None
-            ),
+            mask_png=mask_png,
+            mask_rect=mask_rect,
         )
