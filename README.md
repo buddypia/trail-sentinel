@@ -161,9 +161,14 @@ Additional custom concepts (e.g., *Fallen tree*, *Cliff edge*, *Bicycle*, *Black
 | **Muse Spark 1.3** (Meta Model API) | Semantic verification of each segmented region in the default `SAM 3.1 + Muse Spark 1.3` hybrid; also selectable as a stand-alone model |
 | **Muse Wonder 1.0**, **Muse Glimmer 30B** | Selectable alternative vision models in the model switcher (`vision_router.py`). The priority-triage step (`triage.py`) is deterministic code that fills the "Muse Wonder role" — it is not a model call |
 
+**Which backend actually runs (read this before judging the live URL).** There are two execution paths in `server.py` / `vision_router.py`:
+
+1. **Meta Hackathon VM (connector helper present):** the pure `sam-3.1` route calls the Meta Model API `segment-image` endpoint through the Secure Vault connector helper (`MetaSAMTransport`, one call per concept) and returns real SAM 3.1 boxes and pixel masks (`mask_source: "sam-mask"` when `meta-sam-parser` is installed). This path was verified live on 2026-10-31 (see the docstring in `meta_transport.py`).
+2. **Public Cloud Run demo (no Meta credential, no helper):** the container is keyless, so it cannot reach the Meta Model API. Every route in the model switcher, including the default `SAM 3.1 + Muse Spark 1.3` label, is served by a single-pass **Google Vertex AI (Gemini) vision bridge** (`_BRIDGE_CONFIG` in `vision_router.py`), and the tint it draws is a bbox-derived contour (`mask_source: "bbox-contour"`), not a SAM pixel mask. The model names shown in that UI describe the intended Meta route; they do not mean a Meta model produced that frame's result.
+
 **Pre-existing and third-party material (not authored for this hackathon).**
 
-- **Models / services:** Meta Model API (SAM 3.1, Muse Spark 1.3 …) and Google Cloud Run hosting are used as external services; no model weights are vendored.
+- **Models / services:** the Meta Model API (SAM 3.1 on the Hackathon VM path), Google Vertex AI (Gemini, on the public Cloud Run path) and Google Cloud Run hosting are used as external services; no model weights are vendored.
 - **Browser standard APIs:** `getUserMedia`, Canvas 2D, Web Speech API (`speechSynthesis`, `SpeechRecognition`), Vibration API, `localStorage`.
 - **Web font:** Inter (Google Fonts, SIL OFL) is loaded from the Google Fonts CDN.
 - **Voice clips:** the 126 short MP3 fragments in `webapp/audio/` were synthesized by `tools/make_voice.py` with the `edge-tts` tool and neural voices (`en-US-AvaNeural`, `ko-KR-SunHiNeural`, `ja-JP-NanamiNeural`); the script, not the clips' voices, is our work.
