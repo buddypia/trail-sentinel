@@ -268,7 +268,7 @@ def _helper_parser() -> Any:
 # directly over the bounds rect.
 _PARSER_LIB_DIR = Path(__file__).resolve().parent.parent / "tools" / "pylibs"
 _MASK_MAX_DIM = 256
-_MASK_ALPHA = 170
+_MASK_ALPHA = 110
 _SEVERITY_RGB = {3: (255, 59, 48), 2: (255, 149, 0), 1: (255, 214, 10)}
 
 _sam_parser_cache: Any = None

@@ -40,7 +40,12 @@
 # 1. Feature-tag search (instantly locate edit points)
 rg -n "\[FEAT:" .
 
-# 2. Run all unit tests (no network needed, 0.02 s)
+# 2. FINAL GATE — always run both layers before calling a change done
+#    (FORMAL: compile/syntax/AST contracts/no-secrets · EMPIRICAL: unit
+#    suite + runtime probe + timing budgets). No layer may be skipped.
+python3 tools/verify_all.py
+
+# 2b. Unit tests alone (inside the gate above; no network needed, 0.02 s)
 python3 -m unittest discover -s tests -v
 
 # 3. CLI stub demo & evaluation harness

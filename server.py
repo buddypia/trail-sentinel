@@ -57,6 +57,7 @@ from vision_router import (
     MODEL_BY_ID,
     get_adc_access_token,
     scan_with_vertex_vision,
+    synthesize_contour_mask_png,
 )
 
 ROOT = Path(__file__).parent
@@ -102,7 +103,8 @@ def _severity(concept: str) -> int:
 
 
 def _detection_payload(
-    d: Detection, verify_ko: str | None = None, lang: str = "en"
+    d: Detection, verify_ko: str | None = None, lang: str = "en",
+    *, sam_segmentation: bool = False,
 ) -> dict:
     payload = {
         "concept": d.concept,
@@ -119,9 +121,23 @@ def _detection_payload(
     if verify_ko:
         payload["verify_ko"] = verify_ko
         payload["verify"] = verify_ko
-    if d.mask_png and d.mask_rect:
-        payload["mask_png"] = d.mask_png
-        payload["mask_rect"] = d.mask_rect
+    mask_png, mask_rect = d.mask_png, d.mask_rect
+    if sam_segmentation and not (mask_png and mask_rect):
+        # [FEAT:F2][FEAT:F5] SAM judged this region but the transport gave
+        # no pixel mask (parser unavailable / stub): fall back to a light
+        # bbox-derived contour so the judged area is still tinted in the UI.
+        # mask_source keeps this honest — it is not a real pixel mask.
+        mask_png, mask_rect = synthesize_contour_mask_png(
+            d.bbox, _severity(d.concept)
+        )
+        payload["mask_source"] = "bbox-contour"
+    elif mask_png and mask_rect:
+        payload["mask_source"] = "sam-mask"
+    if mask_png and mask_rect:
+        payload["mask_png"] = mask_png
+        payload["mask_rect"] = mask_rect
+        if sam_segmentation or d.mask_png:
+            payload["segmentation"] = "sam-3.1"
     return payload
 
 
@@ -167,7 +183,10 @@ def scan_frame(
 
         return {
             "frame_index": frame_idx,
-            "detections": [_detection_payload(d, lang=lang) for d in detections],
+            "detections": [
+                _detection_payload(d, lang=lang, sam_segmentation=True)
+                for d in detections
+            ],
             "alert": alert,
             "calls_today": _budget.used_today(),
             "cap": _budget.daily_cap,
@@ -363,11 +382,20 @@ class LiveScanner:
                     self._last_alert_at[track] = started
                     alert = _alert_payload(decision, lang=chosen_lang)
 
+        # SAM-involved routes (pure SAM per-concept, or single-pass SAM
+        # hybrid/pure) always carry a tintable segmentation mask; Muse-only
+        # routes keep bbox-only so no SAM mask is fabricated for them.
+        sam_segmentation = (
+            chosen_model in ("sam-3.1", "sam-3.1-hybrid")
+            if use_single_pass_vision
+            else True
+        )
         result = {
             **base,
             "detections": [
                 _detection_payload(
-                    d, verify_notes.get(d.track_id), lang=chosen_lang
+                    d, verify_notes.get(d.track_id), lang=chosen_lang,
+                    sam_segmentation=sam_segmentation,
                 )
                 for d in detections
             ],

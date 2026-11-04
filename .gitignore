@@ -10,6 +10,8 @@ __pycache__/
 tools/pylibs/
 
 # Deployment runtime state (ephemeral tunnel URL, pids, logs)
+# Production URL memo stays local only — public repo must not carry it
+deploy/production_url.local.txt
 deploy/current_url.txt
 deploy/*.pid
 deploy/logs/

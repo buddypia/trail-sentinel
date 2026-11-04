@@ -52,14 +52,19 @@ const btnVoiceConcept = $("btnVoiceConcept");
 const shot = document.createElement("canvas");
 const shotCtx = shot.getContext("2d");
 
-const CAPTURE_TARGET_LONG = 416;
-const CAPTURE_MIN_SHORT = 240;
-const NEXT_LIVE_DELAY_MS = 160;
+const CAPTURE_TARGET_LONG = 320;
+const CAPTURE_MIN_SHORT = 192;
+const NEXT_LIVE_DELAY_MS = 0;
 const DEMO_TICK_MS = 1000;
 const FRAME_STEP = 5;
 const LAST_FRAME = 60;
-const SCAN_TIMEOUT_MS = 18000;
+const SCAN_TIMEOUT_MS = 12000;
 const ALERT_VALIDITY_MS = 5000;
+// Frame-skip: an almost-identical frame reuses the last result instead of
+// paying a full model round-trip. Forced re-scan at least every 2 s.
+const FRAME_SKIP_DIFF = 1.8;
+const FRAME_CACHE_MAX_MS = 2000;
+const SKIP_TICK_MS = 90;
 
 // === [FEAT:F10] Multi-Language i18n Dictionary & Locale Detection (EN/KO/JA) =
 const SUPPORTED_LANGS = ["en", "ko", "ja"];
@@ -914,6 +919,7 @@ function renderChips() {
         selectedConcepts.add(h.key);
         chip.classList.remove("off");
       }
+      invalidateFrameCache();
     };
     chipsContainer.appendChild(chip);
     chipElements.set(h.key, chip);
@@ -966,7 +972,45 @@ function captureFrame() {
   shot.width = tw;
   shot.height = th;
   shotCtx.drawImage(video, 0, 0, tw, th);
-  return shot.toDataURL("image/jpeg", 0.78);
+  return shot.toDataURL("image/jpeg", 0.7);
+}
+
+// Tiny 16x9 grayscale signature of the just-captured frame, compared
+// against the last frame actually sent to the model.
+const sigCanvas = document.createElement("canvas");
+sigCanvas.width = 16;
+sigCanvas.height = 9;
+const sigCtx = sigCanvas.getContext("2d", { willReadFrequently: true });
+let lastSentSignature = null;
+let lastScanOkAt = 0;
+let hasCachedResult = false;
+
+function computeFrameSignature() {
+  try {
+    sigCtx.drawImage(shot, 0, 0, 16, 9);
+    const px = sigCtx.getImageData(0, 0, 16, 9).data;
+    const sig = new Uint8Array(16 * 9);
+    for (let i = 0; i < sig.length; i++) {
+      const o = i * 4;
+      sig[i] = (px[o] * 77 + px[o + 1] * 150 + px[o + 2] * 29) >> 8;
+    }
+    return sig;
+  } catch {
+    return null;
+  }
+}
+
+function frameSignatureDiff(a, b) {
+  if (!a || !b || a.length !== b.length) return Infinity;
+  let sum = 0;
+  for (let i = 0; i < a.length; i++) sum += Math.abs(a[i] - b[i]);
+  return sum / a.length;
+}
+
+function invalidateFrameCache() {
+  lastSentSignature = null;
+  lastScanOkAt = 0;
+  hasCachedResult = false;
 }
 
 function registerFailure(reason) {
@@ -1033,6 +1077,22 @@ async function scanOnce(reset) {
         nextDelay = 200;
         return;
       }
+      // Frame-skip: reuse the last result for a near-identical frame.
+      // The previous tint/box stay on screen, so nothing flickers and
+      // no new message is shown — only the wait disappears.
+      const signature = computeFrameSignature();
+      if (
+        !reset &&
+        signature &&
+        hasCachedResult &&
+        performance.now() - lastScanOkAt < FRAME_CACHE_MAX_MS &&
+        frameSignatureDiff(signature, lastSentSignature) < FRAME_SKIP_DIFF
+      ) {
+        nextDelay = SKIP_TICK_MS;
+        return;
+      }
+      lastSentSignature = signature;
+      scanDot.className = "scan-dot active";
       if (isVerifyVideo) {
         try {
           video.pause();
@@ -1089,6 +1149,7 @@ async function scanOnce(reset) {
       return;
     }
     if (data.error) {
+      invalidateFrameCache();
       registerFailure(data.detail || data.error);
       nextDelay = 700;
       return;
@@ -1098,6 +1159,10 @@ async function scanOnce(reset) {
     const dets = data.detections || [];
     lastDetections = dets;
     lastReportedMs = reportedMs;
+    if (isRealLive) {
+      lastScanOkAt = performance.now();
+      hasCachedResult = true;
+    }
     drawBoxes(dets);
     highlightDetectedChips(dets);
     updateTelemetryKpis(dets, reportedMs);
@@ -1150,22 +1215,19 @@ async function scanOnce(reset) {
       }
     }
   } catch (e) {
+    invalidateFrameCache();
     registerFailure(e.name === "AbortError" ? t("err_timeout") : t("err_network"));
     nextDelay = 700;
   } finally {
     scanning = false;
     if (isRunning && isVerifyVideo && isRealLive) {
-      // Hold the detected mask/box on the captured frame briefly (650ms),
-      // then resume slow video playback for 1300ms before capturing the next frame
       setTimeout(() => {
         if (isRunning && isVerifyVideo) {
           video.play().catch(() => {});
         }
-      }, 650);
-      scheduleNextTick(Math.max(nextDelay, 1950));
-    } else {
-      scheduleNextTick(nextDelay);
+      }, 120);
     }
+    scheduleNextTick(nextDelay);
   }
 }
 
@@ -1176,7 +1238,33 @@ function showImmediateBanner(det) {
   banner.className = "alert-banner" + ((det.severity || 1) < 3 ? " caution" : "");
 }
 
+// Monotonic guard: a mask decoded for an older scan must never repaint
+// over a newer frame's HUD.
+let drawBoxesGen = 0;
+
+// Decoded SAM mask cache (synthesized masks repeat per severity, so this
+// hits almost every frame). Painting never waits on a decode: the bbox
+// and light fill land synchronously, the shaped tint follows on load.
+const maskImageCache = new Map();
+
+function cachedMaskImage(d, dets, gen) {
+  if (!d.mask_png) return null;
+  const hit = maskImageCache.get(d.mask_png);
+  if (hit) return hit.complete && hit.naturalWidth ? hit : null;
+  const img = new Image();
+  img.onload = () => {
+    if (maskImageCache.size > 12) maskImageCache.clear();
+    maskImageCache.set(d.mask_png, img);
+    if (gen === drawBoxesGen) drawBoxes(dets);
+  };
+  img.onerror = () => maskImageCache.delete(d.mask_png);
+  maskImageCache.set(d.mask_png, img);
+  img.src = d.mask_png;
+  return null;
+}
+
 function drawBoxes(dets) {
+  const gen = ++drawBoxesGen;
   // DPR-aware backing store: crisp boxes/pills on retina phones, layout in CSS px
   const dpr = Math.min(window.devicePixelRatio || 1, 3);
   const cssW = canvas.clientWidth;
@@ -1192,23 +1280,47 @@ function drawBoxes(dets) {
   }
 
   // Draw lower-severity boxes first so critical (severity 3) boxes & pills render on top
-  const ordered = sortDetectionsByPriority(dets).reverse();
+  const ordered = (Array.isArray(dets) ? sortDetectionsByPriority(dets) : []).reverse();
 
+  // Pass 1: SAM 3.1 segmentation tint (light) + bbox wash. Synchronous:
+  // a not-yet-decoded mask simply joins on its onload repaint above.
   for (const d of ordered) {
-    if (d.mask_png && d.mask_rect) {
+    const [x, y, w, h] = d.bbox_norm;
+    const px = x * cssW;
+    const py = y * cssH;
+    const pw = w * cssW;
+    const ph = h * cssH;
+    const maskImg = d.mask_rect ? cachedMaskImage(d, dets, gen) : null;
+    const hasMask = Boolean(maskImg);
+
+    if (hasMask) {
       const [mx, my, mw, mh] = d.mask_rect;
-      const img = new Image();
-      img.onload = () =>
-        ctx.drawImage(
-          img,
-          mx * cssW,
-          my * cssH,
-          mw * cssW,
-          mh * cssH
-        );
-      img.src = d.mask_png;
+      ctx.save();
+      // Light tint only: the camera image must stay readable underneath.
+      ctx.globalAlpha = 0.55;
+      ctx.drawImage(maskImg, mx * cssW, my * cssH, mw * cssW, mh * cssH);
+      ctx.restore();
     }
 
+    // With a shaped SAM tint the rectangular wash drops to a faint hint;
+    // without a mask it stays the judgement-area fill on its own.
+    ctx.fillStyle =
+      d.severity === 3
+        ? hasMask
+          ? "rgba(229, 72, 77, 0.07)"
+          : "rgba(229, 72, 77, 0.20)"
+        : d.severity === 2
+        ? hasMask
+          ? "rgba(229, 169, 59, 0.06)"
+          : "rgba(229, 169, 59, 0.16)"
+        : hasMask
+        ? "rgba(198, 242, 78, 0.05)"
+        : "rgba(198, 242, 78, 0.13)";
+    ctx.fillRect(px, py, pw, ph);
+  }
+
+  // Pass 2: bbox strokes, corners and pills (always above the tint).
+  for (const d of ordered) {
     const [x, y, w, h] = d.bbox_norm;
     const px = x * cssW;
     const py = y * cssH;
@@ -1217,14 +1329,6 @@ function drawBoxes(dets) {
 
     const color =
       d.severity === 3 ? "#e5484d" : d.severity === 2 ? "#e5a93b" : "#c6f24e";
-
-    ctx.fillStyle =
-      d.severity === 3
-        ? "rgba(229, 72, 77, 0.20)"
-        : d.severity === 2
-        ? "rgba(229, 169, 59, 0.16)"
-        : "rgba(198, 242, 78, 0.13)";
-    ctx.fillRect(px, py, pw, ph);
 
     // Outer dark halo for camouflaged background contrast
     ctx.strokeStyle = "rgba(0, 0, 0, 0.88)";
@@ -1260,11 +1364,10 @@ function drawBoxes(dets) {
     ctx.lineWidth = 3.5;
     traceCorners();
 
-    const confStr =
-      typeof d.confidence === "number" ? ` · ${Math.round(d.confidence * 100)}%` : "";
-    const verifyNote = d.verify || d.verify_ko;
-    const verifyStr = verifyNote ? ` [${verifyNote}]` : "";
-    const label = `${getHazardLabel(d)} · ${formatProximity(d.distance_m)}${confStr}${verifyStr}`;
+    // One short pill only: name + distance. The severity-coloured tint
+    // is the SAM judgement display; confidence/verify text stays off the
+    // canvas so the HUD never turns into a wall of messages.
+    const label = `${getHazardLabel(d)} · ${formatProximity(d.distance_m)}`;
     ctx.font = "600 13px Inter, -apple-system, BlinkMacSystemFont, sans-serif";
     const textW = ctx.measureText(label).width;
     const pillW = textW + 18;
@@ -1642,6 +1745,7 @@ async function startVerificationVideoScan() {
 
 function stopAll(note) {
   isRunning = false;
+  invalidateFrameCache();
   isVerifyVideo = false;
   mode = null;
   releaseWakeLock();
@@ -1676,6 +1780,7 @@ function stopAll(note) {
   lastAlertObj = null;
   highlightDetectedChips([]);
   updateTelemetryKpis([], null);
+  drawBoxesGen += 1;
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -1828,6 +1933,7 @@ if (langSelect) {
 if (modelSelect) {
   modelSelect.onchange = () => {
     selectedModel = modelSelect.value;
+    invalidateFrameCache();
     syncModelSpecUI();
     renderStatus(t("status_model_changed"));
   };
