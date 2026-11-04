@@ -196,10 +196,17 @@ class _BuiltinHelperParser:
         for match in _SAM_RECORD_RE.finditer(output_text):
             frame_str, object_id, box_body, mask_body = match.groups()
             box_kv: dict[str, float] = {}
-            for pair in box_body.split(";"):
-                if "=" in pair:
-                    k, v = pair.split("=", 1)
-                    box_kv[k.strip()] = float(v.strip())
+            try:
+                for pair in box_body.split(";"):
+                    if "=" in pair:
+                        k, v = pair.split("=", 1)
+                        box_kv[k.strip()] = float(v.strip())
+                x1, y1 = box_kv["x1"], box_kv["y1"]
+                x2, y2 = box_kv["x2"], box_kv["y2"]
+            except (ValueError, KeyError):
+                continue  # one malformed record must not lose the rest
+            if not all(math.isfinite(v) for v in (x1, y1, x2, y2)):
+                continue
             mask_data = ""
             if mask_body:
                 for pair in mask_body.split(";"):
@@ -210,10 +217,10 @@ class _BuiltinHelperParser:
                 {
                     "frame": int(frame_str),
                     "object_id": object_id.strip(),
-                    "x1": box_kv["x1"],
-                    "y1": box_kv["y1"],
-                    "x2": box_kv["x2"],
-                    "y2": box_kv["y2"],
+                    "x1": x1,
+                    "y1": y1,
+                    "x2": x2,
+                    "y2": y2,
                     "w": box_kv.get("w"),
                     "h": box_kv.get("h"),
                     "mask_present": bool(mask_body),
@@ -266,7 +273,7 @@ def _helper_parser() -> Any:
 # PNG returned is downscaled to <= _MASK_MAX_DIM px and tinted with the
 # concept's severity colour at _MASK_ALPHA, so the frontend can draw it
 # directly over the bounds rect.
-_PARSER_LIB_DIR = Path(__file__).resolve().parent.parent / "tools" / "pylibs"
+_PARSER_LIB_DIR = Path(__file__).resolve().parent / "tools" / "pylibs"
 _MASK_MAX_DIM = 256
 _MASK_ALPHA = 110
 _SEVERITY_RGB = {3: (255, 59, 48), 2: (255, 149, 0), 1: (255, 214, 10)}
@@ -382,6 +389,8 @@ def normalize_record(
     y1 = float(record["y1"])
     x2 = float(record["x2"])
     y2 = float(record["y2"])
+    if not all(math.isfinite(v) for v in (x1, y1, x2, y2)):
+        raise ValueError("SAM record box is not finite")
     frame_w = record.get("w")
     frame_h = record.get("h")
     if frame_w and frame_h and float(frame_w) > 0 and float(frame_h) > 0:
@@ -390,8 +399,17 @@ def normalize_record(
         scale_x = scale_y = 1000.0
     else:
         scale_x = scale_y = 1.0
-    nx, ny = x1 / scale_x, y1 / scale_y
-    nw, nh = (x2 - x1) / scale_x, (y2 - y1) / scale_y
+    # Corner order is not guaranteed and boxes may spill past the frame:
+    # normalize to a clamped lo/hi box so the tint rect can never go
+    # negative (a negative w/h painted nothing / painted backwards).
+    lo_x, hi_x = sorted((x1 / scale_x, x2 / scale_x))
+    lo_y, hi_y = sorted((y1 / scale_y, y2 / scale_y))
+    nx = min(1.0, max(0.0, lo_x))
+    ny = min(1.0, max(0.0, lo_y))
+    nw = min(1.0, max(0.0, hi_x)) - nx
+    nh = min(1.0, max(0.0, hi_y)) - ny
+    if nw <= 0.0 or nh <= 0.0:
+        raise ValueError("SAM record box is degenerate after clamping")
     center_x = nx + nw / 2.0
     clock_direction = 11 if center_x <= 0.4 else (1 if center_x >= 0.6 else 12)
     return {
@@ -413,10 +431,13 @@ def records_from_helper_output(
         raise RuntimeError(f"helper did not send a provider request: {payload}")
     if "error" in payload:
         raise RuntimeError(f"helper segment-image failed: {payload['error']}")
-    return [
-        normalize_record(record, concept=concept)
-        for record in payload.get("records", [])
-    ]
+    mapped: list[dict[str, Any]] = []
+    for record in payload.get("records", []):
+        try:
+            mapped.append(normalize_record(record, concept=concept))
+        except (ValueError, KeyError, TypeError, OverflowError):
+            continue  # drop the bad segment, keep the valid ones
+    return mapped
 
 
 class MetaSAMTransport:

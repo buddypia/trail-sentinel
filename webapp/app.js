@@ -1255,7 +1255,13 @@ function cachedMaskImage(d, dets, gen) {
   img.onload = () => {
     if (maskImageCache.size > 12) maskImageCache.clear();
     maskImageCache.set(d.mask_png, img);
-    if (gen === drawBoxesGen) drawBoxes(dets);
+    // Repaint the CURRENT HUD, not the captured frame: real SAM masks
+    // are unique per scan, so gating on the captured generation dropped
+    // every late decode (a newer scan had already bumped the counter)
+    // and the shaped tint never reached the screen. Painting the
+    // latest detections can never show stale boxes, and stopAll()
+    // empties lastDetections so nothing repaints after a stop.
+    if (lastDetections.length) drawBoxes(lastDetections);
   };
   img.onerror = () => maskImageCache.delete(d.mask_png);
   maskImageCache.set(d.mask_png, img);
