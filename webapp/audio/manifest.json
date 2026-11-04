@@ -1,0 +1,640 @@
+{
+ "voices": {
+  "ko": "ko-KR-SunHiNeural",
+  "en": "en-US-AvaNeural",
+  "ja": "ja-JP-NanamiNeural"
+ },
+ "rate": "+10%",
+ "files": [
+  {
+   "path": "audio/en/a_c01_immediate.mp3",
+   "lang": "en",
+   "text": "1 o'clock, Immediate"
+  },
+  {
+   "path": "audio/en/a_c01_approaching.mp3",
+   "lang": "en",
+   "text": "1 o'clock, Approaching"
+  },
+  {
+   "path": "audio/en/a_c01_ahead.mp3",
+   "lang": "en",
+   "text": "1 o'clock, Ahead"
+  },
+  {
+   "path": "audio/en/a_c02_immediate.mp3",
+   "lang": "en",
+   "text": "2 o'clock, Immediate"
+  },
+  {
+   "path": "audio/en/a_c02_approaching.mp3",
+   "lang": "en",
+   "text": "2 o'clock, Approaching"
+  },
+  {
+   "path": "audio/en/a_c02_ahead.mp3",
+   "lang": "en",
+   "text": "2 o'clock, Ahead"
+  },
+  {
+   "path": "audio/en/a_c03_immediate.mp3",
+   "lang": "en",
+   "text": "3 o'clock, Immediate"
+  },
+  {
+   "path": "audio/en/a_c03_approaching.mp3",
+   "lang": "en",
+   "text": "3 o'clock, Approaching"
+  },
+  {
+   "path": "audio/en/a_c03_ahead.mp3",
+   "lang": "en",
+   "text": "3 o'clock, Ahead"
+  },
+  {
+   "path": "audio/en/a_c04_immediate.mp3",
+   "lang": "en",
+   "text": "4 o'clock, Immediate"
+  },
+  {
+   "path": "audio/en/a_c04_approaching.mp3",
+   "lang": "en",
+   "text": "4 o'clock, Approaching"
+  },
+  {
+   "path": "audio/en/a_c04_ahead.mp3",
+   "lang": "en",
+   "text": "4 o'clock, Ahead"
+  },
+  {
+   "path": "audio/en/a_c05_immediate.mp3",
+   "lang": "en",
+   "text": "5 o'clock, Immediate"
+  },
+  {
+   "path": "audio/en/a_c05_approaching.mp3",
+   "lang": "en",
+   "text": "5 o'clock, Approaching"
+  },
+  {
+   "path": "audio/en/a_c05_ahead.mp3",
+   "lang": "en",
+   "text": "5 o'clock, Ahead"
+  },
+  {
+   "path": "audio/en/a_c06_immediate.mp3",
+   "lang": "en",
+   "text": "6 o'clock, Immediate"
+  },
+  {
+   "path": "audio/en/a_c06_approaching.mp3",
+   "lang": "en",
+   "text": "6 o'clock, Approaching"
+  },
+  {
+   "path": "audio/en/a_c06_ahead.mp3",
+   "lang": "en",
+   "text": "6 o'clock, Ahead"
+  },
+  {
+   "path": "audio/en/a_c07_immediate.mp3",
+   "lang": "en",
+   "text": "7 o'clock, Immediate"
+  },
+  {
+   "path": "audio/en/a_c07_approaching.mp3",
+   "lang": "en",
+   "text": "7 o'clock, Approaching"
+  },
+  {
+   "path": "audio/en/a_c07_ahead.mp3",
+   "lang": "en",
+   "text": "7 o'clock, Ahead"
+  },
+  {
+   "path": "audio/en/a_c08_immediate.mp3",
+   "lang": "en",
+   "text": "8 o'clock, Immediate"
+  },
+  {
+   "path": "audio/en/a_c08_approaching.mp3",
+   "lang": "en",
+   "text": "8 o'clock, Approaching"
+  },
+  {
+   "path": "audio/en/a_c08_ahead.mp3",
+   "lang": "en",
+   "text": "8 o'clock, Ahead"
+  },
+  {
+   "path": "audio/en/a_c09_immediate.mp3",
+   "lang": "en",
+   "text": "9 o'clock, Immediate"
+  },
+  {
+   "path": "audio/en/a_c09_approaching.mp3",
+   "lang": "en",
+   "text": "9 o'clock, Approaching"
+  },
+  {
+   "path": "audio/en/a_c09_ahead.mp3",
+   "lang": "en",
+   "text": "9 o'clock, Ahead"
+  },
+  {
+   "path": "audio/en/a_c10_immediate.mp3",
+   "lang": "en",
+   "text": "10 o'clock, Immediate"
+  },
+  {
+   "path": "audio/en/a_c10_approaching.mp3",
+   "lang": "en",
+   "text": "10 o'clock, Approaching"
+  },
+  {
+   "path": "audio/en/a_c10_ahead.mp3",
+   "lang": "en",
+   "text": "10 o'clock, Ahead"
+  },
+  {
+   "path": "audio/en/a_c11_immediate.mp3",
+   "lang": "en",
+   "text": "11 o'clock, Immediate"
+  },
+  {
+   "path": "audio/en/a_c11_approaching.mp3",
+   "lang": "en",
+   "text": "11 o'clock, Approaching"
+  },
+  {
+   "path": "audio/en/a_c11_ahead.mp3",
+   "lang": "en",
+   "text": "11 o'clock, Ahead"
+  },
+  {
+   "path": "audio/en/a_c12_immediate.mp3",
+   "lang": "en",
+   "text": "12 o'clock ahead, Immediate"
+  },
+  {
+   "path": "audio/en/a_c12_approaching.mp3",
+   "lang": "en",
+   "text": "12 o'clock ahead, Approaching"
+  },
+  {
+   "path": "audio/en/a_c12_ahead.mp3",
+   "lang": "en",
+   "text": "12 o'clock ahead, Ahead"
+  },
+  {
+   "path": "audio/en/b_snake.mp3",
+   "lang": "en",
+   "text": "Snake"
+  },
+  {
+   "path": "audio/en/b_wasp_nest.mp3",
+   "lang": "en",
+   "text": "Wasp nest"
+  },
+  {
+   "path": "audio/en/b_bear.mp3",
+   "lang": "en",
+   "text": "Bear"
+  },
+  {
+   "path": "audio/en/b_boar.mp3",
+   "lang": "en",
+   "text": "Wild boar"
+  },
+  {
+   "path": "audio/en/b_rockfall.mp3",
+   "lang": "en",
+   "text": "Rockfall zone"
+  },
+  {
+   "path": "audio/en/b_slippery.mp3",
+   "lang": "en",
+   "text": "Slippery path"
+  },
+  {
+   "path": "audio/ko/a_c01_immediate.mp3",
+   "lang": "ko",
+   "text": "1시 방향, 초근접"
+  },
+  {
+   "path": "audio/ko/a_c01_approaching.mp3",
+   "lang": "ko",
+   "text": "1시 방향, 접근"
+  },
+  {
+   "path": "audio/ko/a_c01_ahead.mp3",
+   "lang": "ko",
+   "text": "1시 방향, 전방 경계"
+  },
+  {
+   "path": "audio/ko/a_c02_immediate.mp3",
+   "lang": "ko",
+   "text": "2시 방향, 초근접"
+  },
+  {
+   "path": "audio/ko/a_c02_approaching.mp3",
+   "lang": "ko",
+   "text": "2시 방향, 접근"
+  },
+  {
+   "path": "audio/ko/a_c02_ahead.mp3",
+   "lang": "ko",
+   "text": "2시 방향, 전방 경계"
+  },
+  {
+   "path": "audio/ko/a_c03_immediate.mp3",
+   "lang": "ko",
+   "text": "3시 방향, 초근접"
+  },
+  {
+   "path": "audio/ko/a_c03_approaching.mp3",
+   "lang": "ko",
+   "text": "3시 방향, 접근"
+  },
+  {
+   "path": "audio/ko/a_c03_ahead.mp3",
+   "lang": "ko",
+   "text": "3시 방향, 전방 경계"
+  },
+  {
+   "path": "audio/ko/a_c04_immediate.mp3",
+   "lang": "ko",
+   "text": "4시 방향, 초근접"
+  },
+  {
+   "path": "audio/ko/a_c04_approaching.mp3",
+   "lang": "ko",
+   "text": "4시 방향, 접근"
+  },
+  {
+   "path": "audio/ko/a_c04_ahead.mp3",
+   "lang": "ko",
+   "text": "4시 방향, 전방 경계"
+  },
+  {
+   "path": "audio/ko/a_c05_immediate.mp3",
+   "lang": "ko",
+   "text": "5시 방향, 초근접"
+  },
+  {
+   "path": "audio/ko/a_c05_approaching.mp3",
+   "lang": "ko",
+   "text": "5시 방향, 접근"
+  },
+  {
+   "path": "audio/ko/a_c05_ahead.mp3",
+   "lang": "ko",
+   "text": "5시 방향, 전방 경계"
+  },
+  {
+   "path": "audio/ko/a_c06_immediate.mp3",
+   "lang": "ko",
+   "text": "6시 방향, 초근접"
+  },
+  {
+   "path": "audio/ko/a_c06_approaching.mp3",
+   "lang": "ko",
+   "text": "6시 방향, 접근"
+  },
+  {
+   "path": "audio/ko/a_c06_ahead.mp3",
+   "lang": "ko",
+   "text": "6시 방향, 전방 경계"
+  },
+  {
+   "path": "audio/ko/a_c07_immediate.mp3",
+   "lang": "ko",
+   "text": "7시 방향, 초근접"
+  },
+  {
+   "path": "audio/ko/a_c07_approaching.mp3",
+   "lang": "ko",
+   "text": "7시 방향, 접근"
+  },
+  {
+   "path": "audio/ko/a_c07_ahead.mp3",
+   "lang": "ko",
+   "text": "7시 방향, 전방 경계"
+  },
+  {
+   "path": "audio/ko/a_c08_immediate.mp3",
+   "lang": "ko",
+   "text": "8시 방향, 초근접"
+  },
+  {
+   "path": "audio/ko/a_c08_approaching.mp3",
+   "lang": "ko",
+   "text": "8시 방향, 접근"
+  },
+  {
+   "path": "audio/ko/a_c08_ahead.mp3",
+   "lang": "ko",
+   "text": "8시 방향, 전방 경계"
+  },
+  {
+   "path": "audio/ko/a_c09_immediate.mp3",
+   "lang": "ko",
+   "text": "9시 방향, 초근접"
+  },
+  {
+   "path": "audio/ko/a_c09_approaching.mp3",
+   "lang": "ko",
+   "text": "9시 방향, 접근"
+  },
+  {
+   "path": "audio/ko/a_c09_ahead.mp3",
+   "lang": "ko",
+   "text": "9시 방향, 전방 경계"
+  },
+  {
+   "path": "audio/ko/a_c10_immediate.mp3",
+   "lang": "ko",
+   "text": "10시 방향, 초근접"
+  },
+  {
+   "path": "audio/ko/a_c10_approaching.mp3",
+   "lang": "ko",
+   "text": "10시 방향, 접근"
+  },
+  {
+   "path": "audio/ko/a_c10_ahead.mp3",
+   "lang": "ko",
+   "text": "10시 방향, 전방 경계"
+  },
+  {
+   "path": "audio/ko/a_c11_immediate.mp3",
+   "lang": "ko",
+   "text": "11시 방향, 초근접"
+  },
+  {
+   "path": "audio/ko/a_c11_approaching.mp3",
+   "lang": "ko",
+   "text": "11시 방향, 접근"
+  },
+  {
+   "path": "audio/ko/a_c11_ahead.mp3",
+   "lang": "ko",
+   "text": "11시 방향, 전방 경계"
+  },
+  {
+   "path": "audio/ko/a_c12_immediate.mp3",
+   "lang": "ko",
+   "text": "정면(12시 방향), 초근접"
+  },
+  {
+   "path": "audio/ko/a_c12_approaching.mp3",
+   "lang": "ko",
+   "text": "정면(12시 방향), 접근"
+  },
+  {
+   "path": "audio/ko/a_c12_ahead.mp3",
+   "lang": "ko",
+   "text": "정면(12시 방향), 전방 경계"
+  },
+  {
+   "path": "audio/ko/b_snake.mp3",
+   "lang": "ko",
+   "text": "뱀"
+  },
+  {
+   "path": "audio/ko/b_wasp_nest.mp3",
+   "lang": "ko",
+   "text": "말벌집"
+  },
+  {
+   "path": "audio/ko/b_bear.mp3",
+   "lang": "ko",
+   "text": "곰"
+  },
+  {
+   "path": "audio/ko/b_boar.mp3",
+   "lang": "ko",
+   "text": "멧돼지"
+  },
+  {
+   "path": "audio/ko/b_rockfall.mp3",
+   "lang": "ko",
+   "text": "낙석 구간"
+  },
+  {
+   "path": "audio/ko/b_slippery.mp3",
+   "lang": "ko",
+   "text": "미끄러운 구간"
+  },
+  {
+   "path": "audio/ja/a_c01_immediate.mp3",
+   "lang": "ja",
+   "text": "1時方向、至近"
+  },
+  {
+   "path": "audio/ja/a_c01_approaching.mp3",
+   "lang": "ja",
+   "text": "1時方向、接近"
+  },
+  {
+   "path": "audio/ja/a_c01_ahead.mp3",
+   "lang": "ja",
+   "text": "1時方向、前方警戒"
+  },
+  {
+   "path": "audio/ja/a_c02_immediate.mp3",
+   "lang": "ja",
+   "text": "2時方向、至近"
+  },
+  {
+   "path": "audio/ja/a_c02_approaching.mp3",
+   "lang": "ja",
+   "text": "2時方向、接近"
+  },
+  {
+   "path": "audio/ja/a_c02_ahead.mp3",
+   "lang": "ja",
+   "text": "2時方向、前方警戒"
+  },
+  {
+   "path": "audio/ja/a_c03_immediate.mp3",
+   "lang": "ja",
+   "text": "3時方向、至近"
+  },
+  {
+   "path": "audio/ja/a_c03_approaching.mp3",
+   "lang": "ja",
+   "text": "3時方向、接近"
+  },
+  {
+   "path": "audio/ja/a_c03_ahead.mp3",
+   "lang": "ja",
+   "text": "3時方向、前方警戒"
+  },
+  {
+   "path": "audio/ja/a_c04_immediate.mp3",
+   "lang": "ja",
+   "text": "4時方向、至近"
+  },
+  {
+   "path": "audio/ja/a_c04_approaching.mp3",
+   "lang": "ja",
+   "text": "4時方向、接近"
+  },
+  {
+   "path": "audio/ja/a_c04_ahead.mp3",
+   "lang": "ja",
+   "text": "4時方向、前方警戒"
+  },
+  {
+   "path": "audio/ja/a_c05_immediate.mp3",
+   "lang": "ja",
+   "text": "5時方向、至近"
+  },
+  {
+   "path": "audio/ja/a_c05_approaching.mp3",
+   "lang": "ja",
+   "text": "5時方向、接近"
+  },
+  {
+   "path": "audio/ja/a_c05_ahead.mp3",
+   "lang": "ja",
+   "text": "5時方向、前方警戒"
+  },
+  {
+   "path": "audio/ja/a_c06_immediate.mp3",
+   "lang": "ja",
+   "text": "6時方向、至近"
+  },
+  {
+   "path": "audio/ja/a_c06_approaching.mp3",
+   "lang": "ja",
+   "text": "6時方向、接近"
+  },
+  {
+   "path": "audio/ja/a_c06_ahead.mp3",
+   "lang": "ja",
+   "text": "6時方向、前方警戒"
+  },
+  {
+   "path": "audio/ja/a_c07_immediate.mp3",
+   "lang": "ja",
+   "text": "7時方向、至近"
+  },
+  {
+   "path": "audio/ja/a_c07_approaching.mp3",
+   "lang": "ja",
+   "text": "7時方向、接近"
+  },
+  {
+   "path": "audio/ja/a_c07_ahead.mp3",
+   "lang": "ja",
+   "text": "7時方向、前方警戒"
+  },
+  {
+   "path": "audio/ja/a_c08_immediate.mp3",
+   "lang": "ja",
+   "text": "8時方向、至近"
+  },
+  {
+   "path": "audio/ja/a_c08_approaching.mp3",
+   "lang": "ja",
+   "text": "8時方向、接近"
+  },
+  {
+   "path": "audio/ja/a_c08_ahead.mp3",
+   "lang": "ja",
+   "text": "8時方向、前方警戒"
+  },
+  {
+   "path": "audio/ja/a_c09_immediate.mp3",
+   "lang": "ja",
+   "text": "9時方向、至近"
+  },
+  {
+   "path": "audio/ja/a_c09_approaching.mp3",
+   "lang": "ja",
+   "text": "9時方向、接近"
+  },
+  {
+   "path": "audio/ja/a_c09_ahead.mp3",
+   "lang": "ja",
+   "text": "9時方向、前方警戒"
+  },
+  {
+   "path": "audio/ja/a_c10_immediate.mp3",
+   "lang": "ja",
+   "text": "10時方向、至近"
+  },
+  {
+   "path": "audio/ja/a_c10_approaching.mp3",
+   "lang": "ja",
+   "text": "10時方向、接近"
+  },
+  {
+   "path": "audio/ja/a_c10_ahead.mp3",
+   "lang": "ja",
+   "text": "10時方向、前方警戒"
+  },
+  {
+   "path": "audio/ja/a_c11_immediate.mp3",
+   "lang": "ja",
+   "text": "11時方向、至近"
+  },
+  {
+   "path": "audio/ja/a_c11_approaching.mp3",
+   "lang": "ja",
+   "text": "11時方向、接近"
+  },
+  {
+   "path": "audio/ja/a_c11_ahead.mp3",
+   "lang": "ja",
+   "text": "11時方向、前方警戒"
+  },
+  {
+   "path": "audio/ja/a_c12_immediate.mp3",
+   "lang": "ja",
+   "text": "正面（12時方向）、至近"
+  },
+  {
+   "path": "audio/ja/a_c12_approaching.mp3",
+   "lang": "ja",
+   "text": "正面（12時方向）、接近"
+  },
+  {
+   "path": "audio/ja/a_c12_ahead.mp3",
+   "lang": "ja",
+   "text": "正面（12時方向）、前方警戒"
+  },
+  {
+   "path": "audio/ja/b_snake.mp3",
+   "lang": "ja",
+   "text": "ヘビ"
+  },
+  {
+   "path": "audio/ja/b_wasp_nest.mp3",
+   "lang": "ja",
+   "text": "スズメバチの巣"
+  },
+  {
+   "path": "audio/ja/b_bear.mp3",
+   "lang": "ja",
+   "text": "クマ"
+  },
+  {
+   "path": "audio/ja/b_boar.mp3",
+   "lang": "ja",
+   "text": "イノシシ"
+  },
+  {
+   "path": "audio/ja/b_rockfall.mp3",
+   "lang": "ja",
+   "text": "落石区間"
+  },
+  {
+   "path": "audio/ja/b_slippery.mp3",
+   "lang": "ja",
+   "text": "滑りやすい路面"
+  }
+ ]
+}

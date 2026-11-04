@@ -467,8 +467,22 @@ class Handler(SimpleHTTPRequestHandler):
     def log_message(self, *args):  # keep the console quiet
         pass
 
+    def send_response(self, code, message=None):
+        # Pre-generated alert voice fragments are content-stable: mark them
+        # immutable so the idle preload survives across sessions. Only 200s —
+        # a 404 (files not generated yet) must stay revalidatable.
+        self._audio_immutable = (
+            code == 200 and self.path.startswith("/audio/")
+        )
+        super().send_response(code, message)
+
     def end_headers(self) -> None:
-        self.send_header("Cache-Control", "no-cache, must-revalidate")
+        if getattr(self, "_audio_immutable", False):
+            self.send_header(
+                "Cache-Control", "public, max-age=31536000, immutable"
+            )
+        else:
+            self.send_header("Cache-Control", "no-cache, must-revalidate")
         super().end_headers()
 
     def _json(self, payload: dict, code: int = 200) -> None:
