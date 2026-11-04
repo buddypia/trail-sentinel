@@ -148,9 +148,12 @@ AVAILABLE_MODELS: tuple[dict[str, Any], ...] = (
 )
 
 _BRIDGE_CONFIG: dict[str, tuple[str, str]] = {
+    # Performance first: every route runs MINIMAL thinking. The live loop
+    # re-scans continuously, so a failed/slow frame is replaced by the next
+    # one — tail latency hurts more than one frame's extra reasoning.
     "sam-3.1-hybrid": ("gemini-3-flash-preview", "MINIMAL"),
     "muse-spark-1.3": ("gemini-3-flash-preview", "MINIMAL"),
-    "muse-wonder-1.0": ("gemini-3.8-flash", "LOW"),
+    "muse-wonder-1.0": ("gemini-3.8-flash", "MINIMAL"),
     "muse-glimmer": ("gemini-3-flash-preview", "MINIMAL"),
     "sam-3.1": ("gemini-3-flash-preview", "MINIMAL"),
 }
@@ -263,8 +266,8 @@ def synthesize_contour_mask_png(
             nx = (xx + 0.5) / dw * 2.0 - 1.0
             dist_sq = nx * nx + ny * ny
             if dist_sq <= 0.92:
-                alpha = int(125 * (1.0 - 0.45 * dist_sq))
-                row += bytes((red, green, blue, max(40, min(140, alpha))))
+                alpha = int(88 * (1.0 - 0.40 * dist_sq))
+                row += bytes((red, green, blue, max(28, min(92, alpha))))
             else:
                 row += b"\x00\x00\x00\x00"
         rows.append(bytes(row))
@@ -336,7 +339,7 @@ def scan_with_vertex_vision(
             ],
             "generationConfig": {
                 "temperature": 0.0,
-                "maxOutputTokens": 240,
+                "maxOutputTokens": 160,
                 "responseMimeType": "application/json",
                 "mediaResolution": "MEDIA_RESOLUTION_LOW",
                 "thinkingConfig": {"thinkingLevel": thinking_level},
@@ -358,7 +361,9 @@ def scan_with_vertex_vision(
 
     raw_body = b""
     status_code = 0
-    for attempt in range(2):
+    # Fail fast (single attempt): the scan loop issues the next frame
+    # immediately, so an in-call retry only doubles worst-case latency.
+    for attempt in range(1):
         conn = _get_https_connection()
         try:
             conn.request("POST", path, body=payload_bytes, headers=headers)

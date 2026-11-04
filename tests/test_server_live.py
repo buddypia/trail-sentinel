@@ -9,9 +9,11 @@ back-to-back scans without spending.
 from __future__ import annotations
 
 import base64
+import struct
 import sys
 import tempfile
 import unittest
+import zlib
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -127,6 +129,19 @@ class LiveScannerTests(unittest.TestCase):
             self.assertEqual(client.calls, ["snake"])  # no second call
             self.assertEqual(budget.used_today(), 1)
 
+    def test_pure_sam_detection_gets_light_sam_tint_mask(self):
+        # Per-concept SAM path (no vision_fn): even when the transport
+        # returns no pixel mask, the UI payload must carry a tintable
+        # SAM 3.1 mask so the judged area is light-filled on screen.
+        with tempfile.TemporaryDirectory() as tmp:
+            scanner, _, _ = make_scanner(tmp)
+            result = scanner.scan(JPEG_BYTES, "image/jpeg", ["snake"])
+            det = result["detections"][0]
+            self.assertEqual(det["segmentation"], "sam-3.1")
+            self.assertEqual(det["mask_source"], "bbox-contour")
+            self.assertTrue(det["mask_png"].startswith("data:image/png;base64,"))
+            self.assertEqual(det["mask_rect"], [0.1, 0.4, 0.5, 0.55])
+
     def test_no_valid_concepts(self):
         with tempfile.TemporaryDirectory() as tmp:
             scanner, client, _ = make_scanner(tmp)
@@ -175,6 +190,60 @@ class LiveScannerTests(unittest.TestCase):
             self.assertEqual(res["alert"]["text_en"], "Ahead, 2 meters, Bear")
             self.assertEqual(res["alert"]["text_ja"], "前方 2メートル、クマ")
             self.assertEqual(res["alert"]["text_ko"], "전방 2미터, 곰")
+            # Muse-only route: no SAM mask may be fabricated for it.
+            self.assertNotIn("mask_png", res["detections"][0])
+            self.assertNotIn("segmentation", res["detections"][0])
+
+    def test_single_pass_sam_hybrid_gets_sam_tint_mask(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            budget = CallBudget(daily_cap=50, counter_path=Path(tmp) / "c.json")
+            client = FakeClient(budget)
+
+            def fake_vision(image_bytes, media_type, keys, *, frame_idx, model_id):
+                return [Detection(
+                    concept="snake", frame_idx=frame_idx, confidence=0.9,
+                    distance_m=1.2, clock_direction=12, track_id="snake-0",
+                    bbox=[0.2, 0.3, 0.4, 0.4],
+                )], {}
+
+            scanner = server.LiveScanner(
+                client, budget, min_interval_s=0.0, vision_fn=fake_vision
+            )
+            res = scanner.scan(
+                JPEG_BYTES, "image/jpeg", ["snake"], model="sam-3.1-hybrid"
+            )
+            det = res["detections"][0]
+            self.assertEqual(det["segmentation"], "sam-3.1")
+            self.assertTrue(det["mask_png"].startswith("data:image/png;base64,"))
+            self.assertEqual(det["mask_rect"], [0.2, 0.3, 0.4, 0.4])
+
+
+class SamMaskTintTests(unittest.TestCase):
+    def test_synthesized_sam_mask_is_light_not_opaque(self):
+        from vision_router import synthesize_contour_mask_png
+
+        mask_png, mask_rect = synthesize_contour_mask_png([0.1, 0.2, 0.5, 0.5], 3)
+        self.assertEqual(mask_rect, [0.1, 0.2, 0.5, 0.5])
+        raw = base64.b64decode(mask_png.split(",", 1)[1])
+        idat = b""
+        pos = 8
+        width = height = None
+        while pos < len(raw):
+            (length,) = struct.unpack(">I", raw[pos:pos + 4])
+            tag, data = raw[pos + 4:pos + 8], raw[pos + 8:pos + 8 + length]
+            if tag == b"IHDR":
+                width, height = struct.unpack(">II", data[:8])
+            elif tag == b"IDAT":
+                idat += data
+            pos += 12 + length
+        pixels = zlib.decompress(idat)
+        stride = 1 + width * 4
+        alphas = [
+            pixels[row * stride + 1 + x * 4 + 3]
+            for row in range(height) for x in range(width)
+        ]
+        self.assertGreater(max(alphas), 0)
+        self.assertLessEqual(max(alphas), 92)  # light tint, never opaque
 
 
 class DataUrlTests(unittest.TestCase):

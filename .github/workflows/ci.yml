@@ -18,16 +18,12 @@ jobs:
         with:
           python-version: "3.13"
 
-      - name: Unit tests
-        run: python3 -m unittest discover -s tests -v
-
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
 
-      - name: Webapp JS syntax
-        run: node --check webapp/app.js
-
-      - name: JSON assets valid
-        run: |
-          python3 -c "import json; json.load(open('eval/clips_manifest.json')); json.load(open('webapp/manifest.webmanifest')); print('JSON OK')"
+      # Single gate: FORMAL (compile/syntax/AST contracts/no-secrets)
+      # + EMPIRICAL (unit suite, runtime probe, timing budgets).
+      # Both layers always run; see tools/verify_all.py.
+      - name: Verify (formal + empirical)
+        run: python3 tools/verify_all.py
